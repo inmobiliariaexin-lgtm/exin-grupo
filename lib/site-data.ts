@@ -2,6 +2,16 @@ import { hasSupabasePublicEnv } from '@/lib/supabase/env'
 import { createSupabasePublicClient } from '@/lib/supabase/public'
 import type { HomeContent, Property, PublicSiteSettings } from '@/lib/types'
 import { defaultHomeContent, defaultPublicSiteSettings } from '@/lib/types'
+import { defaultTermsContent, readLegalContent, type LegalPageContent } from '@/lib/legal-content'
+
+export async function getTermsContent(): Promise<LegalPageContent> {
+  if (!hasSupabasePublicEnv()) return defaultTermsContent
+  try {
+    const supabase = createSupabasePublicClient()
+    const { data } = await supabase.from('site_modules').select('content,enabled').eq('module_key', 'terms').maybeSingle()
+    return data?.enabled ? readLegalContent(data.content, defaultTermsContent) : defaultTermsContent
+  } catch { return defaultTermsContent }
+}
 
 export async function getHomeContent(): Promise<HomeContent> {
   if (!hasSupabasePublicEnv()) return defaultHomeContent

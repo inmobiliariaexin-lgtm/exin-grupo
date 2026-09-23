@@ -14,7 +14,7 @@ export async function updateSession(request: NextRequest) {
         response = NextResponse.next({ request })
         cookiesToSet.forEach(({ name, value, options }) => response.cookies.set(name, value, options))
         for (const header of ['cache-control', 'expires', 'pragma']) {
-          const value = headers?.get(header)
+          const value = headers?.[header]
           if (value) response.headers.set(header, value)
         }
       },

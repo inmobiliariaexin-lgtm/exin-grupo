@@ -99,6 +99,19 @@ export async function saveHomeContentAction(form: FormData) {
   revalidatePath('/'); redirect('/admin/contenido?guardado=1')
 }
 
+export async function saveTermsContentAction(form: FormData) {
+  const context = await requireAdminContext(managerRoles)
+  const parsed = z.object({ title: z.string().trim().min(4).max(160), body: z.string().trim().min(100).max(20_000) }).safeParse({ title: form.get('title'), body: form.get('body') })
+  if (!parsed.success) redirect('/admin/legal?error=campos')
+  const approved = form.get('approved') === 'on'
+  const now = new Date().toISOString()
+  const { error } = await context.supabase.from('site_modules').upsert({ module_key: 'terms', content: { ...parsed.data, approved, version: `v-${now.slice(0, 10)}`, updatedAt: now }, enabled: true, sort_order: 90, updated_by: context.profile.id, updated_at: now })
+  if (error) redirect('/admin/legal?error=guardar')
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: approved ? 'APPROVE' : 'EDIT', entity_type: 'site_module', entity_id: 'terms' })
+  revalidatePath('/terminos'); revalidatePath('/admin/legal'); revalidatePath('/sitemap.xml')
+  redirect('/admin/legal?guardado=1')
+}
+
 export async function setSiteModuleAction(form: FormData) {
   const context = await requireAdminContext(['superadmin','admin','editor'])
   const key = String(form.get('module_key') || ''), enabled = form.get('enabled') === 'on'
