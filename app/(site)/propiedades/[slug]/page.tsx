@@ -1,0 +1,17 @@
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import Link from 'next/link'
+import { RequestForm } from '@/components/request-form'
+import { getPropertyBySlug, formatPropertyPrice, getPublicSiteSettings } from '@/lib/site-data'
+type Params = { slug: string }
+export async function generateMetadata({ params }: { params: Promise<Params> }): Promise<Metadata> {
+  const { slug } = await params, property = await getPropertyBySlug(slug)
+  return property ? { title: property.title, description: property.description ?? `${property.property_type} en ${property.city ?? 'Colombia'} · Código ${property.verification_code}`, alternates:{canonical:`/propiedades/${property.slug}`}, openGraph: { title: property.title, description: property.description ?? undefined, images: property.cover_url ? [property.cover_url] : [] } } : { title: 'Inmueble no disponible' }
+}
+export default async function PropertyDetailPage({ params }: { params: Promise<Params> }) {
+  const { slug } = await params, property = await getPropertyBySlug(slug)
+  if (!property) notFound()
+  const contacts = await getPublicSiteSettings()
+  const gallery = (property as typeof property & { gallery: { url: string; alt: string }[] }).gallery
+  return <main className="section detail-page"><Link className="back-link" href="/propiedades">← Volver a propiedades</Link><div className="detail-hero" role="img" aria-label={gallery?.[0]?.alt || property.title} style={{ backgroundImage: property.cover_url ? `url("${property.cover_url}")` : 'linear-gradient(140deg,#d8dfe2,#9ba8ad)' }} /><div className="detail-heading"><div><p className="eyebrow dark">{property.operation === 'sale' ? 'INMUEBLE EN VENTA' : 'INMUEBLE EN ARRIENDO'} · CÓDIGO {property.verification_code}</p><h1>{property.title}</h1><p className="location">⌖ &nbsp;{[property.neighborhood, property.city].filter(Boolean).join(' · ')}</p></div><strong className="detail-price">{formatPropertyPrice(property.price)}</strong></div><div className="detail-specs">{property.bedrooms !== null && <span>{property.bedrooms} habitaciones</span>}{property.bathrooms !== null && <span>{property.bathrooms} baños</span>}{property.area_m2 !== null && <span>{property.area_m2} m²</span>}<span>{property.property_type}</span></div><section className="detail-description"><h2>Descripción</h2><p>{property.description || 'Solicita información para conocer más detalles de este inmueble.'}</p></section>{gallery?.length > 1 && <section className="gallery-grid" aria-label="Galería de imágenes">{gallery.slice(1).map((image) => <div key={image.url} role="img" aria-label={image.alt} style={{ backgroundImage: `url("${image.url}")` }} />)}</section>}<section className="detail-contact"><div><p className="eyebrow dark">¿TE INTERESA ESTE INMUEBLE?</p><h2>Conversemos sobre los siguientes pasos.</h2><Link className="button" href={`/agendar?propertyId=${encodeURIComponent(property.id)}&propertyCode=${encodeURIComponent(property.verification_code)}`}>Agendar visita <span>→</span></Link>{contacts.whatsapp && <Link className="text-link" href={`https://wa.me/${contacts.whatsapp.replace(/\D/g, '')}`} target="_blank" rel="noreferrer">Consultar por WhatsApp <b>↗</b></Link>}<Link className="text-link" href="/contacto">Solicitar información <b>→</b></Link></div><RequestForm kind="contact" propertyId={property.id} propertyCode={property.verification_code} /></section></main>
+}

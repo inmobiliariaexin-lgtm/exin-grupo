@@ -1,0 +1,3 @@
+import type { Metadata } from 'next'
+export const metadata: Metadata = { title: 'Privacidad', robots: { index: false, follow: false } }
+export default function PrivacyPage() { return <main className="section narrow-page"><p className="eyebrow dark">INFORMACIÓN LEGAL</p><h1>Tratamiento de datos personales</h1><div className="info-box">Pendiente de aprobación por EXIN Grupo y revisión jurídica. No activar formularios de producción hasta publicar el aviso y la política definitivos.</div><p>Esta página reserva el espacio para explicar quién trata los datos, con qué finalidades, cómo ejercer los derechos correspondientes y por qué canales contactar al responsable. El texto definitivo debe ser aprobado por EXIN y su asesoría jurídica.</p></main> }

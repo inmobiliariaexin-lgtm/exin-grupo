@@ -1,0 +1,11 @@
+'use client'
+import { useEffect, useState } from 'react'
+type Asset = { id: string; public_url: string; file_name: string; alt_text: string; content_type: string; created_at: string }
+export function MediaLibrary() {
+  const [assets, setAssets] = useState<Asset[]>([]), [busy,setBusy] = useState(false), [notice,setNotice] = useState('')
+  async function load() { const response = await fetch('/api/admin/media', { cache: 'no-store' }); const data = await response.json(); if (response.ok) setAssets(data.assets ?? []); else setNotice(data.error || 'No se pudo cargar la biblioteca.') }
+  useEffect(() => { void load() }, [])
+  async function upload(event: React.FormEvent<HTMLFormElement>) { event.preventDefault(); setBusy(true); setNotice(''); const form = event.currentTarget; const response = await fetch('/api/admin/media', { method:'POST', body:new FormData(form) }); const data = await response.json(); if (!response.ok) setNotice(data.error || 'No se pudo subir la imagen.'); else { setNotice('Imagen guardada en Supabase Storage.'); form.reset(); await load() } setBusy(false) }
+  async function copy(url: string) { await navigator.clipboard.writeText(url); setNotice('Enlace copiado. Pégalo en el campo de imagen de portada.') }
+  return <section className="admin-panel"><div className="panel-title"><h2>Biblioteca multimedia</h2><span>Imágenes públicas del sitio</span></div><form className="media-upload-form" onSubmit={upload}><label>Imagen JPG, PNG, WebP o AVIF<input name="file" type="file" accept="image/jpeg,image/png,image/webp,image/avif" required /></label><label>Texto alternativo<input name="altText" required maxLength={180} placeholder="Describe con precisión lo que muestra la imagen" /></label><button className="button" disabled={busy}>{busy ? 'Subiendo…' : 'Subir imagen'}</button></form>{notice && <p className="form-status" role="status">{notice}</p>}<div className="media-grid">{assets.map((asset) => <article className="media-card" key={asset.id}><img src={asset.public_url} alt={asset.alt_text} /><strong>{asset.file_name}</strong><small>{asset.alt_text}</small><button type="button" className="small-button" onClick={() => copy(asset.public_url)}>Copiar URL</button></article>)}</div></section>
+}

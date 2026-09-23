@@ -1,0 +1,4 @@
+import Link from 'next/link'
+import { AdminLoginForm } from '@/components/admin-login-form'
+import { hasSupabasePublicEnv } from '@/lib/supabase/env'
+export default function AdminLoginPage() { return <main className="admin-login-page"><Link href="/" className="brand"><img src="/assets/logo-exin.png" alt="EXIN Grupo" /></Link><section className="admin-login-card"><p className="eyebrow dark">ACCESO PRIVADO</p><h1>Administración</h1><p>Ingresa con tu cuenta individual de EXIN Grupo.</p>{hasSupabasePublicEnv() ? <AdminLoginForm /> : <div className="info-box">Configura las variables de Supabase y crea las cuentas administrativas antes de habilitar este acceso.</div>}<Link href="/" className="back-link">← Volver al sitio</Link></section><small>El acceso requiere usuario activo y permisos asignados.</small></main> }
