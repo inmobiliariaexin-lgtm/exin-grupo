@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { Resend } from 'resend'
 import { requireAdminContext } from '@/lib/admin-auth'
+import { getResendApiKey } from '@/lib/resend'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import type { AppRole } from '@/lib/types'
 
@@ -82,7 +83,8 @@ export async function updateAppointmentAction(form: FormData) {
   if(error)redirect(`/admin/citas?error=${error.code==='P0001'?'ocupada':'guardar'}`)
   await context.supabase.from('audit_log').insert({actor_id:context.profile.id,action:status==='confirmed'?'CONFIRM':'UPDATE',entity_type:'appointment',entity_id:id})
   let emailState='sin-correo'
-  if(status==='confirmed'&&current.client_email&&process.env.RESEND_API_KEY&&process.env.EMAIL_FROM){try{const resend=new Resend(process.env.RESEND_API_KEY);const sent=await resend.emails.send({from:process.env.EMAIL_FROM,to:current.client_email,subject:'Cita confirmada · EXIN Grupo',text:`Hola ${current.client_name},\n\nTu cita de ${current.appointment_type} con EXIN Grupo quedó confirmada para el ${new Date(current.starts_at).toLocaleString('es-CO',{timeZone:'America/Bogota'})}.\n\nSi necesitas hacer un cambio, responde a este correo.`});emailState=sent.error?'fallo':'enviado'}catch{emailState='fallo'}}
+  const resendApiKey = getResendApiKey()
+  if(status==='confirmed'&&current.client_email&&resendApiKey&&process.env.EMAIL_FROM){try{const resend=new Resend(resendApiKey);const sent=await resend.emails.send({from:process.env.EMAIL_FROM,to:current.client_email,subject:'Cita confirmada · EXIN Grupo',text:`Hola ${current.client_name},\n\nTu cita de ${current.appointment_type} con EXIN Grupo quedó confirmada para el ${new Date(current.starts_at).toLocaleString('es-CO',{timeZone:'America/Bogota'})}.\n\nSi necesitas hacer un cambio, responde a este correo.`});emailState=sent.error?'fallo':'enviado'}catch{emailState='fallo'}}
   revalidatePath('/admin/citas'); redirect(`/admin/citas?actualizada=1&email=${emailState}`)
 }
 

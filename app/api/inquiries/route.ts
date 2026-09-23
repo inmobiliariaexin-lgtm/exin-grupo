@@ -2,6 +2,7 @@ import { createHmac, randomUUID } from 'node:crypto'
 import { NextResponse, type NextRequest } from 'next/server'
 import { Resend } from 'resend'
 import { inquirySchema } from '@/lib/inquiry-schema'
+import { getResendApiKey } from '@/lib/resend'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export const runtime = 'nodejs'
@@ -98,9 +99,10 @@ export async function POST(request: NextRequest) {
   const { data: setting } = await admin.from('private_settings').select('value').eq('setting_key', 'inquiry_notification_email').maybeSingle()
   if (setting?.value) recipient = setting.value
   let notificationSent = false
-  if (recipient && process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
+  const resendApiKey = getResendApiKey()
+  if (recipient && resendApiKey && process.env.EMAIL_FROM) {
     try {
-      const resend = new Resend(process.env.RESEND_API_KEY)
+      const resend = new Resend(resendApiKey)
       const result = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: recipient,
