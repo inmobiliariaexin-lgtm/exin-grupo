@@ -48,7 +48,7 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
         <label className="wide">Correo de notificaciones<input type="email" name="email" defaultValue={email} maxLength={254} placeholder="inmobiliaria.exin@gmail.com" /><small>Si se deja vacío, el sistema usa INQUIRY_NOTIFICATION_EMAIL del hosting.</small></label>
         <button className="button">Guardar correo</button>
       </form>
-      <p className="form-hint">El envío requiere la clave de Resend y EMAIL_FROM configurados en Vercel, y un remitente habilitado en Resend. El navegador nunca recibe esas credenciales.</p>
+      <p className="form-hint">El envío requiere la clave de Resend y EMAIL_FROM configurados como secretos y variables de Cloudflare Workers, y un remitente habilitado en Resend. El navegador nunca recibe esas credenciales.</p>
     </section>
 
     <section className="admin-panel">
@@ -65,9 +65,9 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
     <section className="admin-panel">
       <div className="panel-title"><h2>Estado de integraciones</h2></div>
       <div className="integration-status">
-        <p><strong>Hosting:</strong> {siteUrl ? `Vercel · ${siteUrl}` : 'Falta configurar NEXT_PUBLIC_SITE_URL en Vercel.'}</p>
-        <p><strong>Base de datos, Auth y Storage:</strong> {supabaseReady ? 'Supabase tiene sus variables de conexión en Vercel.' : 'Faltan variables de conexión de Supabase en Vercel.'}</p>
-        <p><strong>Notificaciones:</strong> {emailReady ? 'Hay credenciales de Resend configuradas; confirma que el remitente esté verificado.' : 'Pendiente de la clave de Resend y EMAIL_FROM en Vercel.'}</p>
+        <p><strong>Hosting:</strong> {siteUrl ? `Cloudflare Workers · ${siteUrl}` : 'Falta configurar NEXT_PUBLIC_SITE_URL en Cloudflare Workers.'}</p>
+        <p><strong>Base de datos, Auth y Storage:</strong> {supabaseReady ? 'Supabase tiene sus variables de conexión configuradas en Cloudflare Workers.' : 'Faltan variables de conexión de Supabase en Cloudflare Workers.'}</p>
+        <p><strong>Notificaciones:</strong> {emailReady ? 'Hay credenciales de Resend configuradas; confirma que el remitente esté verificado.' : 'Pendiente de la clave de Resend y EMAIL_FROM en Cloudflare Workers.'}</p>
         <p><strong>Protección anti-spam:</strong> {turnstileReady ? 'Hay llaves de Cloudflare Turnstile configuradas.' : 'Pendiente de las llaves pública y privada de Cloudflare Turnstile.'}</p>
         <p><strong>Consentimiento y límite de envíos:</strong> {securityReady ? 'Versión del consentimiento y clave segura de control configuradas.' : 'Falta configurar LEGAL_CONSENT_VERSION o una clave RATE_LIMIT_HMAC_SECRET de al menos 32 caracteres.'}</p>
         <p><strong>Dominio:</strong> {siteUrl ? 'El sitio está configurado para usar el dominio indicado arriba con HTTPS.' : 'Pendiente de configurar el dominio y NEXT_PUBLIC_SITE_URL.'}</p>

@@ -2,7 +2,7 @@
 
 Aplicación web Next.js basada en la interfaz y en los requisitos de los documentos maestros. Incluye el catálogo público, búsqueda, fichas de inmuebles, formularios, solicitud de citas y un panel privado para propiedades, imágenes, contactos, contenido, usuarios y seguimiento comercial.
 
-El proyecto se publica como **Next.js en Cloudflare Workers (OpenNext) + Supabase**. La vista previa usa `exin-grupo-preview.daffy-group.workers.dev`; el dominio principal debe vincularse antes de considerar completa la migración. Resend entrega correos de notificación y Cloudflare Turnstile protege los formularios.
+El proyecto se publica como **Next.js en Cloudflare Workers (OpenNext) + Supabase**. La producción está conectada a `https://inmobiliariagrupoexin.com` y `https://www.inmobiliariagrupoexin.com`; la vista previa usa `exin-grupo-preview.daffy-group.workers.dev`. Resend entrega avisos de solicitudes y Cloudflare Turnstile protege los formularios.
 
 ## Abrir en Visual Studio Code
 
@@ -20,20 +20,20 @@ Visual Studio Code es el editor recomendado. El proyecto también se puede abrir
 
 | Servicio | Función | Configuración pendiente |
 | --- | --- | --- |
-| Cloudflare Workers | Hosting y compilación de la aplicación | `workers.dev` está activo; falta vincular el dominio principal |
-| Supabase | PostgreSQL, inicio de sesión, imágenes y archivos privados | Crear el proyecto y aplicar migraciones |
-| Resend | Avisos de solicitudes y confirmación de citas | Verificar dominio de envío y cargar API key |
-| Cloudflare Turnstile | Protección contra envíos automatizados | Crear widget para los dominios de producción y vista previa |
+| Cloudflare Workers | Hosting y compilación de la aplicación | Producción activa con dominio propio; la URL `workers.dev` queda como vista previa |
+| Supabase | PostgreSQL, inicio de sesión, imágenes y archivos privados | Proyecto existente conectado; conservarlo al migrar y proteger sus claves |
+| Resend | Avisos de solicitudes y confirmación de citas | Clave cargada en Cloudflare; falta hacer un envío de prueba desde el formulario y confirmar entrega |
+| Cloudflare Turnstile | Protección contra envíos automatizados | Widget existente acepta el dominio principal y la URL de vista previa |
 
-## Conectar Supabase
+## Supabase y recuperación de acceso
 
-1. Crea un proyecto Supabase y guarda la URL, el **publishable key** y el **secret key** en un gestor seguro.
-2. Instala la [CLI oficial de Supabase](https://supabase.com/docs/guides/cli) e inicia sesión con `supabase login`.
-3. Desde esta carpeta enlaza el proyecto con `supabase link --project-ref TU_PROJECT_REF`.
-4. Revisa los cambios con `npm run db:push:dry`; cuando el proyecto Supabase seleccionado sea el correcto, aplica con `npm run db:push`.
-5. En **Authentication → URL Configuration**, configura la URL pública final y las URLs de retorno de producción, `*.vercel.app` y localhost para desarrollo.
-6. En **Authentication → SMTP Settings**, conecta un proveedor SMTP verificado antes de invitar usuarios.
-7. Crea el primer usuario desde Supabase Auth. Luego, en el SQL Editor de ese mismo proyecto, promuévelo a superadmin:
+El proyecto Supabase `exin-grupo` ya está conectado y **Site URL** y la URL de retorno de `https://inmobiliariagrupoexin.com` están configuradas. Conserva ese mismo proyecto al migrar; no crees otro ni vuelvas a aplicar migraciones sin revisar antes el estado de producción.
+
+Para administrar migraciones futuras, instala la [CLI oficial de Supabase](https://supabase.com/docs/guides/cli), inicia sesión con `supabase login`, enlaza el proyecto con `supabase link --project-ref rqczwbyetuvehjdtetqt` y revisa siempre los cambios con `npm run db:push:dry` antes de aplicar `npm run db:push`.
+
+En **Authentication → SMTP Settings**, mantén un proveedor SMTP verificado para invitaciones y recuperación de contraseña. El acceso administrativo utiliza cuentas individuales; no hay registro público. El superadmin invita personal desde `/admin/usuarios`. Los invitados crean su contraseña en `/admin/nueva-contrasena`.
+
+Si hay que preparar una instalación desde cero, crea el usuario inicial en Supabase Auth y, en el SQL Editor de ese mismo proyecto, promuévelo a superadmin:
 
    ```sql
    update public.profiles p
@@ -48,7 +48,7 @@ La migración inicial crea las tablas, permisos RLS, buckets públicos de imáge
 
 ## Variables de entorno
 
-Configura en `.env.local` para desarrollo. Para Cloudflare Workers, guarda las variables públicas en `wrangler.jsonc` y añade los secretos en **Workers & Pages → exin-grupo-preview → Settings → Variables and Secrets**:
+Configura en `.env.local` para desarrollo. Para producción, administra las variables y secretos en **Workers & Pages → exin-grupo-preview → Settings → Variables and Secrets**. El dominio canónico ya está configurado en `wrangler.jsonc`:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -63,13 +63,13 @@ Configura en `.env.local` para desarrollo. Para Cloudflare Workers, guarda las v
 
 ## Desplegar en Cloudflare Workers
 
-1. Clona el repositorio GitHub y ejecuta `npm install`.
+1. Clona el repositorio GitHub, usa la rama `cloudflare-preview` y ejecuta `npm install`.
 2. Ejecuta `wrangler login` con una cuenta autorizada para desplegar el Worker.
-3. Define `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` en el entorno de compilación.
+3. Define las variables públicas de Supabase y Turnstile en `wrangler.jsonc`; `NEXT_PUBLIC_SITE_URL` debe ser `https://inmobiliariagrupoexin.com`.
 4. Ejecuta `npm run deploy:cloudflare-preview`. El comando genera `.open-next/` y publica el Worker descrito en `wrangler.jsonc`.
 5. Confirma en Cloudflare que los secretos de Supabase, Resend, Turnstile y límites de solicitudes estén guardados para Producción.
-6. Añade el dominio a Cloudflare Workers y completa los cambios DNS necesarios antes de publicar el dominio principal.
-7. Aplica las migraciones de Supabase, configura SMTP, crea el superadmin, carga los inmuebles reales y revisa los textos legales antes de habilitar captación pública.
+6. Verifica en la sección Dominios que `inmobiliariagrupoexin.com` y `www.inmobiliariagrupoexin.com` estén conectados al Worker.
+7. Antes de una nueva migración, revisa las migraciones de Supabase, SMTP, el correo de prueba y los textos legales. Después carga los inmuebles reales y los datos públicos de contacto desde el panel.
 
 ## Rutas implementadas
 
@@ -78,8 +78,8 @@ Configura en `.env.local` para desarrollo. Para Cloudflare Workers, guarda las v
 - El módulo de arriendos y el de constructora empiezan desactivados. No hay listados inmobiliarios ficticios en el catálogo conectado.
 - `prototipo-estatico/` conserva la maqueta anterior para referencia visual; no es el sitio de producción ni debe publicarse como reemplazo de la aplicación Next.js.
 
-## Requisitos antes de producción
+## Pendientes de contenido y revisión
 
-El documento complementario es una base funcional reconstruida y pide revisión antes de contratar o publicar. EXIN debe confirmar los textos legales, roles finales, políticas comerciales, datos reales, cuentas proveedoras y dominio. La página de privacidad y el consentimiento todavía requieren aprobación jurídica. No se debe recoger información real hasta configurar esos textos y los secretos del entorno.
+El contenido del catálogo aún requiere inmuebles reales publicados. Desde **Administración → Configuración** se deben completar los teléfonos y WhatsApp. Los textos de privacidad, consentimiento y términos necesitan aprobación de EXIN y revisión jurídica. Conviene enviar una solicitud de prueba con datos ficticios y confirmar que queda guardada en **Administración → Solicitudes** y que llega a `inmobiliaria.exin@gmail.com` antes de promocionar la captación.
 
 Documentación oficial: [Cloudflare Workers](https://developers.cloudflare.com/workers/), [OpenNext](https://opennext.js.org/cloudflare), [Supabase](https://supabase.com/docs), [Resend](https://resend.com/docs) y [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/).
