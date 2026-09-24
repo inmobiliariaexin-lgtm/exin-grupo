@@ -1,5 +1,4 @@
 'use server'
-import { randomUUID } from 'node:crypto'
 import { redirect } from 'next/navigation'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
@@ -207,7 +206,8 @@ export async function inviteAdminUserAction(form: FormData) {
   const roles: AppRole[] = ['admin','commercial','advisor','editor']
   if (!z.email().safeParse(email).success || name.length < 2 || name.length > 120 || !roles.includes(role)) redirect('/admin/usuarios?error=campos')
   const admin = createSupabaseAdminClient()
-  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { data: { full_name: name }, redirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/admin/login` })
+  const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://inmobiliariagrupoexin.com').replace(/\/$/, '')
+  const { data, error } = await admin.auth.admin.inviteUserByEmail(email, { data: { full_name: name }, redirectTo: `${siteUrl}/admin/recuperar-contrasena/callback` })
   if (error || !data.user) redirect('/admin/usuarios?error=invitacion')
   const { error: roleError } = await context.supabase.from('profiles').update({ full_name: name, role }).eq('id', data.user.id)
   if (roleError) redirect('/admin/usuarios?error=rol')

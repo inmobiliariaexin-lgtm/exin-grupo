@@ -1,6 +1,12 @@
 node_modules/
 .next/
 .vercel/
+.open-next/
+.wrangler/
+.dev.vars
+.npm-cache/
+*.tsbuildinfo
+.dev.vars*
 .env*
 !.env.example
 supabase/.temp/

@@ -33,6 +33,7 @@ export async function POST(request: NextRequest) {
   const allowedOrigins = new Set<string>()
   try { if (process.env.NEXT_PUBLIC_SITE_URL) allowedOrigins.add(new URL(process.env.NEXT_PUBLIC_SITE_URL).origin) } catch { /* invalid site URL is not trusted */ }
   if (process.env.VERCEL_URL && /^[a-z0-9.-]+$/i.test(process.env.VERCEL_URL)) allowedOrigins.add(`https://${process.env.VERCEL_URL}`)
+  try { if (process.env.CLOUDFLARE_WORKER_URL) allowedOrigins.add(new URL(process.env.CLOUDFLARE_WORKER_URL).origin) } catch { /* invalid preview URLs are not trusted */ }
   if (process.env.NODE_ENV !== 'production') allowedOrigins.add(request.nextUrl.origin)
   let originUrl: URL | null = null
   try { if (origin) originUrl = new URL(origin) } catch { /* invalid origins are rejected */ }

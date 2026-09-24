@@ -1,7 +1,6 @@
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
 import { RequestForm } from '@/components/request-form'
-import { getPropertyBySlug } from '@/lib/site-data'
 export const metadata: Metadata = { title: 'Solicitar una cita', description: 'Solicita una fecha y hora para conversar con EXIN Grupo.' }
 export default async function AppointmentRequestPage({ searchParams }: { searchParams: Promise<{ propertyId?: string; propertyCode?: string }> }) {
   const params=await searchParams

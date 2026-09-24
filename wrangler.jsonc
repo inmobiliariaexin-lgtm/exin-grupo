@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "exin-grupo-preview",
+  "main": ".open-next/worker.js",
+  "compatibility_date": "2026-09-24",
+  "compatibility_flags": ["nodejs_compat"],
+  "vars": {
+    "CLOUDFLARE_WORKER_URL": "https://exin-grupo-preview.daffy-group.workers.dev",
+    "EMAIL_FROM": "EXIN Grupo <notificaciones@inmobiliariagrupoexin.com>",
+    "INQUIRY_NOTIFICATION_EMAIL": "inmobiliaria.exin@gmail.com",
+    "LEGAL_CONSENT_VERSION": "draft-v1.0-2026-09-24",
+    "NEXT_PUBLIC_SITE_URL": "https://exin-grupo-preview.daffy-group.workers.dev",
+    "NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY": "sb_publishable_gxdmTcoN27LbmDqWui_KWQ_J-wfk-tP",
+    "NEXT_PUBLIC_SUPABASE_URL": "https://rqczwbyetuvehjdtetqt.supabase.co",
+    "NEXT_PUBLIC_TURNSTILE_SITE_KEY": "0x4AAAAAAFCePAMnUcBMq_eX"
+  },
+  "assets": {
+    "directory": ".open-next/assets",
+    "binding": "ASSETS"
+  },
+  "services": [
+    {
+      "binding": "WORKER_SELF_REFERENCE",
+      "service": "exin-grupo-preview"
+    }
+  ]
+}

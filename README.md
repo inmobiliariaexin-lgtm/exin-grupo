@@ -2,7 +2,7 @@
 
 Aplicación web Next.js basada en la interfaz y en los requisitos de los documentos maestros. Incluye el catálogo público, búsqueda, fichas de inmuebles, formularios, solicitud de citas y un panel privado para propiedades, imágenes, contactos, contenido, usuarios y seguimiento comercial.
 
-El proyecto está preparado para **Vercel + Supabase**. Resend entrega correos de notificación y Cloudflare Turnstile protege los formularios. El código de integración está incluido; las cuentas, credenciales, dominio y contenidos aprobados de EXIN todavía deben conectarse para que opere en producción.
+El proyecto se publica como **Next.js en Cloudflare Workers (OpenNext) + Supabase**. La vista previa usa `exin-grupo-preview.daffy-group.workers.dev`; el dominio principal debe vincularse antes de considerar completa la migración. Resend entrega correos de notificación y Cloudflare Turnstile protege los formularios.
 
 ## Abrir en Visual Studio Code
 
@@ -20,7 +20,7 @@ Visual Studio Code es el editor recomendado. El proyecto también se puede abrir
 
 | Servicio | Función | Configuración pendiente |
 | --- | --- | --- |
-| Vercel | Hosting, compilación y dominios HTTPS | Crear el proyecto y asignar el dominio EXIN |
+| Cloudflare Workers | Hosting y compilación de la aplicación | `workers.dev` está activo; falta vincular el dominio principal |
 | Supabase | PostgreSQL, inicio de sesión, imágenes y archivos privados | Crear el proyecto y aplicar migraciones |
 | Resend | Avisos de solicitudes y confirmación de citas | Verificar dominio de envío y cargar API key |
 | Cloudflare Turnstile | Protección contra envíos automatizados | Crear widget para los dominios de producción y vista previa |
@@ -42,13 +42,13 @@ Visual Studio Code es el editor recomendado. El proyecto también se puede abrir
    where p.id = u.id and lower(u.email) = lower('CORREO-DEL-ADMIN');
    ```
 
-   El proyecto no habilita el registro público. El superadmin podrá invitar personal desde `/admin/usuarios`.
+   El proyecto no habilita el registro público. El superadmin invita personal desde `/admin/usuarios`. El invitado recibe un enlace de Supabase Auth que abre `/admin/nueva-contrasena`; allí crea y confirma su contraseña (10–128 caracteres) y luego inicia sesión. Antes de invitar, configura SMTP y permite la URL de vista previa o del dominio final en **Authentication → URL Configuration**.
 
 La migración inicial crea las tablas, permisos RLS, buckets públicos de imágenes, bucket privado de captaciones, límites de archivos y funciones para formularios. Las propiedades reales no se cargan automáticamente: deben ingresarse y aprobarse desde el panel.
 
 ## Variables de entorno
 
-Configura en `.env.local` para desarrollo y en **Vercel → Project → Settings → Environment Variables** para producción y vistas previas:
+Configura en `.env.local` para desarrollo. Para Cloudflare Workers, guarda las variables públicas en `wrangler.jsonc` y añade los secretos en **Workers & Pages → exin-grupo-preview → Settings → Variables and Secrets**:
 
 - `NEXT_PUBLIC_SUPABASE_URL`
 - `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -56,20 +56,20 @@ Configura en `.env.local` para desarrollo y en **Vercel → Project → Settings
 - `RATE_LIMIT_HMAC_SECRET` (mínimo 32 caracteres aleatorios)
 - `NEXT_PUBLIC_SITE_URL` (URL canónica HTTPS de producción)
 - `LEGAL_CONSENT_VERSION` (versión del aviso aprobada por EXIN)
-- `RESEND_API_KEY`, `EMAIL_FROM`, `INQUIRY_NOTIFICATION_EMAIL`
+- `EXIN_RESEND_API_KEY` (or `RESEND_API_KEY`), `EMAIL_FROM`, `INQUIRY_NOTIFICATION_EMAIL`
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
 
-Los valores de Resend y Turnstile no deben publicarse. Añade el dominio de producción y los dominios de vista previa de Vercel a la configuración del widget Turnstile. Vercel proporciona `VERCEL_URL` automáticamente para validar formularios en vistas previas.
+`SUPABASE_SECRET_KEY`, `RATE_LIMIT_HMAC_SECRET`, `EXIN_RESEND_API_KEY` y `TURNSTILE_SECRET_KEY` son secretos: nunca deben añadirse a GitHub ni a `wrangler.jsonc`. Las variables `NEXT_PUBLIC_*` se necesitan al compilar el cliente. Añade el hostname de producción y el de vista previa a Turnstile.
 
-## Desplegar en Vercel
+## Desplegar en Cloudflare Workers
 
-1. Sube esta carpeta a un repositorio Git privado y crea un proyecto Vercel desde ese repositorio.
-2. Selecciona Next.js (detección automática), define las variables de entorno y asigna el dominio EXIN en **Settings → Domains**.
-3. Apunta los registros DNS que indique Vercel. Vercel gestiona el certificado HTTPS del dominio.
-4. Aplica las migraciones de Supabase antes de habilitar formularios o invitar al equipo.
-5. Agrega en Resend el registro DNS de envío (SPF/DKIM) que indique la cuenta y actualiza `EMAIL_FROM`.
-6. Configura Turnstile para el dominio real, carga ambas claves y actualiza `LEGAL_CONSENT_VERSION` solo con el texto aprobado.
-7. Crea el primer superadmin y carga únicamente propiedades, contactos e imágenes autorizados por EXIN.
+1. Clona el repositorio GitHub y ejecuta `npm install`.
+2. Ejecuta `wrangler login` con una cuenta autorizada para desplegar el Worker.
+3. Define `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`, `NEXT_PUBLIC_SITE_URL` y `NEXT_PUBLIC_TURNSTILE_SITE_KEY` en el entorno de compilación.
+4. Ejecuta `npm run deploy:cloudflare-preview`. El comando genera `.open-next/` y publica el Worker descrito en `wrangler.jsonc`.
+5. Confirma en Cloudflare que los secretos de Supabase, Resend, Turnstile y límites de solicitudes estén guardados para Producción.
+6. Añade el dominio a Cloudflare Workers y completa los cambios DNS necesarios antes de publicar el dominio principal.
+7. Aplica las migraciones de Supabase, configura SMTP, crea el superadmin, carga los inmuebles reales y revisa los textos legales antes de habilitar captación pública.
 
 ## Rutas implementadas
 
@@ -82,4 +82,4 @@ Los valores de Resend y Turnstile no deben publicarse. Añade el dominio de prod
 
 El documento complementario es una base funcional reconstruida y pide revisión antes de contratar o publicar. EXIN debe confirmar los textos legales, roles finales, políticas comerciales, datos reales, cuentas proveedoras y dominio. La página de privacidad y el consentimiento todavía requieren aprobación jurídica. No se debe recoger información real hasta configurar esos textos y los secretos del entorno.
 
-Documentación oficial: [Vercel](https://vercel.com/docs), [Supabase](https://supabase.com/docs), [Resend](https://resend.com/docs) y [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/).
+Documentación oficial: [Cloudflare Workers](https://developers.cloudflare.com/workers/), [OpenNext](https://opennext.js.org/cloudflare), [Supabase](https://supabase.com/docs), [Resend](https://resend.com/docs) y [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/).
