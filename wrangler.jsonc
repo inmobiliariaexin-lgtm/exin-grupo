@@ -4,6 +4,7 @@
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-09-24",
   "compatibility_flags": ["nodejs_compat"],
+  "keep_vars": true,
   "vars": {
     "CLOUDFLARE_WORKER_URL": "https://exin-grupo-preview.daffy-group.workers.dev",
     "EMAIL_FROM": "EXIN Grupo <notificaciones@inmobiliariagrupoexin.com>",
