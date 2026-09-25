@@ -478,5 +478,16 @@ grant select, insert, update, delete on public.property_types to authenticated;
 grant select on public.site_modules, public.site_settings, public.locations, public.property_types to anon;
 grant usage, select on sequence public.audit_log_id_seq to authenticated;
 
+-- Trusted server routes use the Supabase service_role key. BYPASSRLS does not
+-- replace SQL table grants, so grant it access to the application tables used
+-- by server-side APIs and administrative workflows.
+grant usage on schema public to service_role;
+grant select, insert, update, delete on public.profiles, public.properties,
+  public.property_images, public.inquiries, public.audit_log, public.site_modules,
+  public.site_settings, public.private_settings, public.locations,
+  public.property_types, public.appointments, public.inquiry_attachments,
+  public.submission_rate_limits, public.media_assets to service_role;
+grant usage, select on sequence public.audit_log_id_seq to service_role;
+
 -- El alta del primer superadmin, las credenciales de proveedores, SMTP y los
 -- textos jurídicos aprobados se completan por ambiente antes de producción.
