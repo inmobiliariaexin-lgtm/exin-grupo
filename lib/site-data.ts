@@ -87,7 +87,7 @@ export async function getPropertyBySlug(slug: string): Promise<Property | null> 
   if (!hasSupabasePublicEnv()) return null
   try {
     const supabase = createSupabasePublicClient()
-    const { data, error } = await supabase.from('properties').select('id,verification_code,slug,title,operation,property_type,price,city,neighborhood,description,bedrooms,bathrooms,area_m2,status,is_featured').eq('slug', slug).eq('status', 'published').maybeSingle()
+    const { data, error } = await supabase.from('properties').select('id,verification_code,slug,title,operation,property_type,price,city,neighborhood,description,bedrooms,bathrooms,area_m2,status,is_featured,seo_title,seo_description').eq('slug', slug).eq('status', 'published').maybeSingle()
     if (error || !data) return null
     if (data.operation === 'rent' && !await getRentEnabled()) return null
     const { data: images } = await supabase.from('property_images').select('storage_path,is_cover,alt_text').eq('property_id', data.id).order('sort_order')

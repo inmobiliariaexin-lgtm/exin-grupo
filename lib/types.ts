@@ -13,6 +13,8 @@ export type Property = {
   bedrooms: number | null
   bathrooms: number | null
   area_m2: number | null
+  seo_title?: string | null
+  seo_description?: string | null
   status: 'draft' | 'published' | 'inactive' | 'sold'
   is_featured: boolean
   cover_url?: string | null

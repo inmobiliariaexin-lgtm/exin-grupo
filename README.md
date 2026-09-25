@@ -46,6 +46,17 @@ Si hay que preparar una instalación desde cero, crea el usuario inicial en Supa
 
 La migración inicial crea las tablas, permisos RLS, buckets públicos de imágenes, bucket privado de captaciones, límites de archivos y funciones para formularios. Las propiedades reales no se cargan automáticamente: deben ingresarse y aprobarse desde el panel.
 
+## Cargar fotografías de inmuebles
+
+1. Entra a `https://inmobiliariagrupoexin.com/admin/login` con una cuenta activa de administrador.
+2. Abre **Propiedades** y registra el inmueble. Pulsa **Guardar inmueble**.
+3. Busca el registro en **Inmuebles recientes** y pulsa **Cargar fotos**.
+4. Selecciona una imagen JPG, PNG, WebP o AVIF de máximo 3 MB y agrega un texto alternativo que describa la foto. Se admiten hasta 30 imágenes por inmueble.
+5. La primera imagen queda como portada. En la galería puedes seleccionar otra portada, cambiar el orden o retirar una imagen.
+6. Cambia el estado a **Publicada** cuando la ficha y sus fotos estén listas. Las imágenes de la galería son públicas y se mostrarán en el catálogo.
+
+Para imágenes de la portada, fondos y otros contenidos del sitio, abre **Administración → Contenido → Biblioteca multimedia**. Esa biblioteca general no reemplaza la galería propia de cada inmueble.
+
 ## Variables de entorno
 
 Configura en `.env.local` para desarrollo. Para producción, administra las variables y secretos en **Workers & Pages → exin-grupo-preview → Settings → Variables and Secrets**. El dominio canónico ya está configurado en `wrangler.jsonc`:
@@ -74,7 +85,7 @@ Configura en `.env.local` para desarrollo. Para producción, administra las vari
 ## Rutas implementadas
 
 - Sitio público: `/`, `/propiedades`, `/propiedades/[slug]`, `/vender`, `/credito`, `/nosotros`, `/contacto`, `/aliados`, `/agendar` y `/privacidad`.
-- Administración protegida: `/admin/login`, `/admin`, `/admin/propiedades`, `/admin/leads`, `/admin/citas`, `/admin/contenido`, `/admin/ubicaciones`, `/admin/usuarios` y `/admin/configuracion`.
+- Administración protegida: `/admin/login`, `/admin`, `/admin/propiedades`, `/admin/propiedades/[id]/editar`, `/admin/propiedades/[id]/imagenes`, `/admin/leads`, `/admin/citas`, `/admin/contenido`, `/admin/ubicaciones`, `/admin/usuarios` y `/admin/configuracion`.
 - El módulo de arriendos y el de constructora empiezan desactivados. No hay listados inmobiliarios ficticios en el catálogo conectado.
 - `prototipo-estatico/` conserva la maqueta anterior para referencia visual; no es el sitio de producción ni debe publicarse como reemplazo de la aplicación Next.js.
 

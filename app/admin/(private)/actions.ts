@@ -34,6 +34,72 @@ export async function createPropertyAction(form: FormData) {
   revalidatePath('/'); revalidatePath('/propiedades'); redirect('/admin/propiedades?guardada=1')
 }
 
+export async function updatePropertyAction(form: FormData) {
+  const context = await requireAdminContext(managerRoles)
+  const id = String(form.get('id') || '')
+  if (!z.uuid().safeParse(id).success) redirect('/admin/propiedades?error=campos')
+  const values = z.object({
+    title: z.string().trim().min(3).max(180),
+    operation: z.enum(['sale', 'rent']),
+    type: z.string().trim().min(2).max(80),
+    city: z.string().trim().min(2).max(100),
+    neighborhood: z.string().trim().max(120).optional(),
+    description: z.string().trim().max(5000).optional(),
+    seo_title: z.string().trim().max(160).optional(),
+    seo_description: z.string().trim().max(320).optional(),
+    status: z.enum(['draft', 'published', 'inactive', 'sold']),
+  }).safeParse({
+    title: form.get('title'),
+    operation: form.get('operation'),
+    type: form.get('type'),
+    city: form.get('city'),
+    neighborhood: form.get('neighborhood'),
+    description: form.get('description'),
+    seo_title: form.get('seo_title'),
+    seo_description: form.get('seo_description'),
+    status: form.get('status'),
+  })
+  if (!values.success) redirect(`/admin/propiedades/${id}/editar?error=campos`)
+
+  const bedrooms = optionalNumber(form, 'bedrooms')
+  const bathrooms = optionalNumber(form, 'bathrooms')
+  const area = optionalNumber(form, 'area')
+  const price = optionalNumber(form, 'price')
+  const numericValid = [bedrooms, bathrooms, area, price].every((value) => value === null || Number.isFinite(value) && value >= 0)
+    && (bedrooms === null || Number.isInteger(bedrooms))
+    && (area === null || area > 0)
+  if (!numericValid) redirect(`/admin/propiedades/${id}/editar?error=numero`)
+
+  const { data: current } = await context.supabase.from('properties').select('slug,status,published_at').eq('id', id).maybeSingle()
+  if (!current) redirect('/admin/propiedades?error=guardar')
+  const value = values.data
+  const { error } = await context.supabase.from('properties').update({
+    title: value.title,
+    operation: value.operation,
+    property_type: value.type,
+    city: value.city,
+    neighborhood: value.neighborhood || null,
+    description: value.description || null,
+    seo_title: value.seo_title || null,
+    seo_description: value.seo_description || null,
+    bedrooms,
+    bathrooms,
+    area_m2: area,
+    price,
+    status: value.status,
+    is_featured: value.status === 'published' && form.get('featured') === 'on',
+    published_at: value.status !== 'published' ? null : current.status === 'published' ? current.published_at : new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  }).eq('id', id)
+  if (error) redirect(`/admin/propiedades/${id}/editar?error=${error.code === 'P0001' ? 'destacadas' : 'guardar'}`)
+
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'UPDATE', entity_type: 'property', entity_id: id })
+  revalidatePath('/')
+  revalidatePath('/propiedades')
+  revalidatePath(`/propiedades/${current.slug}`)
+  redirect('/admin/propiedades?actualizada=1')
+}
+
 export async function setPropertyStatusAction(form: FormData) {
   const context = await requireAdminContext(managerRoles)
   const id = String(form.get('id') || ''), status = String(form.get('status') || '')
