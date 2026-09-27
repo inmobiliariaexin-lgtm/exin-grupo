@@ -1,6 +1,7 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   "name": "exin-grupo-preview",
+  "account_id": "7d438d8d8410b451d7b8c0dca7058367",
   "main": ".open-next/worker.js",
   "compatibility_date": "2026-09-24",
   "compatibility_flags": ["nodejs_compat"],
