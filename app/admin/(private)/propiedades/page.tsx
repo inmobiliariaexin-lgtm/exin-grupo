@@ -1,9 +1,10 @@
 import Link from 'next/link'
 import { requireAdminContext } from '@/lib/admin-auth'
+import { AdminDeleteForm } from '@/components/admin-delete-form'
 import { getActiveCities, getActivePropertyTypes } from '@/lib/site-data'
-import { setPropertyStatusAction, createPropertyAction } from '../actions'
+import { deletePropertyAction, setPropertyStatusAction, createPropertyAction } from '../actions'
 
-export default async function AdminPropertiesPage({ searchParams }: { searchParams: Promise<{ error?: string; guardada?: string; actualizada?: string }> }) {
+export default async function AdminPropertiesPage({ searchParams }: { searchParams: Promise<{ error?: string; guardada?: string; actualizada?: string; eliminada?: string; archivos_pendientes?: string }> }) {
   const [{ supabase }, cities, types, query] = await Promise.all([
     requireAdminContext(['superadmin', 'admin']),
     getActiveCities(),
@@ -33,6 +34,10 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
     numero: 'Revisa los valores numéricos.',
     duplicado: 'El código o URL ya está registrado. Verifica los datos del inmueble.',
     guardar: 'No pudimos guardar el inmueble.',
+    confirmacion: 'No se confirmó el borrado.',
+    no_encontrado: 'No encontramos ese inmueble.',
+    borrar: 'No se pudo eliminar el inmueble.',
+    archivos: 'No se pudieron eliminar las fotografías. El inmueble se conservó; inténtalo de nuevo.',
     destacadas: 'Ya hay cinco propiedades destacadas. Retira una antes de agregar otra.',
   }
 
@@ -48,6 +53,7 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
     {query.error && <p className="form-alert" role="alert">{errors[query.error] || 'Ocurrió un error.'}</p>}
     {query.guardada && <p className="form-success">Inmueble registrado. Ahora puedes cargar sus fotografías en la lista de abajo.</p>}
     {query.actualizada && <p className="form-success">Estado actualizado.</p>}
+    {query.eliminada && <p className="form-success">Inmueble, ficha y fotografías eliminados. Las solicitudes de clientes se conservaron.</p>}
 
     <section className="admin-panel">
       <div className="panel-title"><h2>Registrar inmueble</h2></div>
@@ -96,6 +102,7 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
                   <Link href={`/admin/propiedades/${property.id}/editar`} className="small-button">Editar ficha</Link>
                   <Link href={`/admin/propiedades/${property.id}/imagenes`} className="small-button">{photos.count ? 'Editar fotos' : 'Cargar fotos'}</Link>
                   <Link href={`/propiedades/${property.slug}`} target="_blank" className="small-button">Ver ficha ↗</Link>
+                  <AdminDeleteForm action={deletePropertyAction} id={property.id} buttonLabel="Borrar inmueble" prompt={`Se eliminarán permanentemente ${property.title}, su ficha y sus fotografías. Las solicitudes de clientes vinculadas se conservarán sin relación al inmueble.`} />
                 </div>
               </div>
               <form action={setPropertyStatusAction} className="inline-admin-form">

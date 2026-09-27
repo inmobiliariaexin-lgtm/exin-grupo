@@ -36,3 +36,22 @@ export async function POST(request: NextRequest) {
   await admin.from('audit_log').insert({ actor_id: actor.userId, action: 'UPLOAD', entity_type: 'media_asset', entity_id: data.id })
   return NextResponse.json({ asset: data }, { status: 201 })
 }
+
+export async function DELETE(request: NextRequest) {
+  const actor = await verifyApiAdmin(['superadmin', 'admin'])
+  if (!actor) return NextResponse.json({ error: 'Se requiere una cuenta administradora.' }, { status: 401 })
+  const id = new URL(request.url).searchParams.get('id')
+  if (!id || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(id)) return NextResponse.json({ error: 'La imagen no es válida.' }, { status: 400 })
+
+  const admin = createSupabaseAdminClient()
+  const { data: asset, error: lookupError } = await admin.from('media_assets').select('id,storage_path').eq('id', id).maybeSingle()
+  if (lookupError) return NextResponse.json({ error: 'No se pudo consultar la imagen.' }, { status: 503 })
+  if (!asset) return NextResponse.json({ error: 'No encontramos esa imagen.' }, { status: 404 })
+
+  const { error: storageError } = await admin.storage.from('site-media').remove([asset.storage_path])
+  if (storageError) return NextResponse.json({ error: 'No se pudo borrar el archivo de imagen.' }, { status: 503 })
+  const { error: deleteError } = await admin.from('media_assets').delete().eq('id', id)
+  if (deleteError) return NextResponse.json({ error: 'El archivo se borró pero no se pudo quitar su registro de la biblioteca. Vuelve a intentarlo.' }, { status: 503 })
+  await admin.from('audit_log').insert({ actor_id: actor.userId, action: 'DELETE', entity_type: 'media_asset', entity_id: id })
+  return NextResponse.json({ ok: true })
+}

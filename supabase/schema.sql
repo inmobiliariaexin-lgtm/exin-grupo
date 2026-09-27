@@ -80,7 +80,7 @@ create table public.properties (
   published_at timestamptz,
   seo_title text,
   seo_description text,
-  created_by uuid references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now(),
   check (not is_featured or status = 'published')
@@ -167,26 +167,27 @@ create table public.audit_log (
   created_at timestamptz not null default now()
 );
 
+
 -- Public content is data so approved staff can update it without code changes.
 create table public.site_modules (
   module_key text primary key,
   content jsonb not null default '{}'::jsonb,
   enabled boolean not null default true,
   sort_order integer not null default 0,
-  updated_by uuid references public.profiles(id),
+  updated_by uuid references public.profiles(id) on delete set null,
   updated_at timestamptz not null default now()
 );
 create table public.site_settings (
   setting_key text primary key,
   value jsonb not null default 'null'::jsonb,
   is_public boolean not null default true,
-  updated_by uuid references public.profiles(id),
+  updated_by uuid references public.profiles(id) on delete set null,
   updated_at timestamptz not null default now()
 );
 create table public.private_settings (
   setting_key text primary key,
   value text not null,
-  updated_by uuid references public.profiles(id),
+  updated_by uuid references public.profiles(id) on delete set null,
   updated_at timestamptz not null default now()
 );
 create table public.locations (
@@ -210,7 +211,7 @@ create table public.property_types (
 
 create table public.appointments (
   id uuid primary key default gen_random_uuid(),
-  inquiry_id uuid references public.inquiries(id) on delete set null,
+  inquiry_id uuid references public.inquiries(id) on delete cascade,
   property_id uuid references public.properties(id) on delete set null,
   client_name text not null,
   client_phone text not null,
@@ -283,7 +284,7 @@ create table public.media_assets (
   file_name text not null,
   alt_text text not null,
   content_type text not null,
-  created_by uuid references public.profiles(id),
+  created_by uuid references public.profiles(id) on delete set null,
   created_at timestamptz not null default now()
 );
 

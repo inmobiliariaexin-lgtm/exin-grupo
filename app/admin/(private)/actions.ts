@@ -360,3 +360,100 @@ export async function setUserActiveAction(form: FormData) {
   await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: active ? 'ACTIVATE_USER' : 'DEACTIVATE_USER', entity_type: 'profile', entity_id: id })
   revalidatePath('/admin/usuarios'); redirect('/admin/usuarios?actualizado=1')
 }
+
+function hasDeleteConfirmation(form: FormData) {
+  return String(form.get('confirmation') || '').trim().toUpperCase() === 'ELIMINAR'
+}
+
+export async function deleteAdminUserAction(form: FormData) {
+  const context = await requireAdminContext(['superadmin'])
+  const id = String(form.get('id') || '')
+  if (!z.uuid().safeParse(id).success || id === context.profile.id || !hasDeleteConfirmation(form)) redirect('/admin/usuarios?error=confirmacion')
+
+  const admin = createSupabaseAdminClient()
+  const [{ data: target }, { data: activeSuperadmins, error: superadminError }] = await Promise.all([
+    admin.from('profiles').select('id,role').eq('id', id).maybeSingle(),
+    admin.from('profiles').select('id').eq('role', 'superadmin').eq('active', true),
+  ])
+  if (!target) redirect('/admin/usuarios?error=usuario')
+  if (superadminError) redirect('/admin/usuarios?error=borrar')
+  if (target.role === 'superadmin' && (activeSuperadmins?.length ?? 0) <= 1) redirect('/admin/usuarios?error=ultimo_superadmin')
+
+  const { error: auditError } = await admin.from('audit_log').update({ entity_id: null, details: {} }).eq('entity_type', 'profile').eq('entity_id', id)
+  if (auditError) redirect('/admin/usuarios?error=borrar')
+  const { error } = await admin.auth.admin.deleteUser(id)
+  if (error) redirect('/admin/usuarios?error=borrar')
+
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'DELETE_USER', entity_type: 'profile', entity_id: null, details: { role: target.role } })
+  revalidatePath('/admin/usuarios'); revalidatePath('/admin/leads'); revalidatePath('/admin/citas')
+  redirect('/admin/usuarios?eliminado=1')
+}
+
+export async function deleteInquiryDataAction(form: FormData) {
+  const context = await requireAdminContext(managerRoles)
+  const id = String(form.get('id') || '')
+  if (!z.uuid().safeParse(id).success || !hasDeleteConfirmation(form)) redirect('/admin/leads?error=confirmacion')
+
+  const admin = createSupabaseAdminClient()
+  const [{ data: inquiry }, { data: attachments, error: attachmentError }] = await Promise.all([
+    admin.from('inquiries').select('id').eq('id', id).maybeSingle(),
+    admin.from('inquiry_attachments').select('storage_path').eq('inquiry_id', id),
+  ])
+  if (!inquiry) redirect('/admin/leads?error=no_encontrada')
+  if (attachmentError) redirect('/admin/leads?error=borrar')
+
+  const paths = (attachments ?? []).map((attachment) => attachment.storage_path)
+  const { error: storageError } = paths.length
+    ? await admin.storage.from('intake-attachments').remove(paths)
+    : { error: null }
+  if (storageError) redirect('/admin/leads?error=archivos')
+  const { error: auditError } = await admin.from('audit_log').update({ entity_id: null, details: {} }).eq('entity_type', 'inquiry').eq('entity_id', id)
+  if (auditError) redirect('/admin/leads?error=borrar')
+  const { error } = await admin.from('inquiries').delete().eq('id', id)
+  if (error) redirect('/admin/leads?error=borrar')
+
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'DELETE_PERSONAL_DATA', entity_type: 'inquiry', entity_id: null })
+  revalidatePath('/admin/leads'); revalidatePath('/admin/citas')
+  redirect('/admin/leads?eliminado=1')
+}
+
+export async function deleteAppointmentAction(form: FormData) {
+  const context = await requireAdminContext(managerRoles)
+  const id = String(form.get('id') || '')
+  if (!z.uuid().safeParse(id).success || !hasDeleteConfirmation(form)) redirect('/admin/citas?error=confirmacion')
+
+  const admin = createSupabaseAdminClient()
+  const { error: auditError } = await admin.from('audit_log').update({ entity_id: null, details: {} }).eq('entity_type', 'appointment').eq('entity_id', id)
+  if (auditError) redirect('/admin/citas?error=borrar')
+  const { error } = await admin.from('appointments').delete().eq('id', id)
+  if (error) redirect('/admin/citas?error=borrar')
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'DELETE_APPOINTMENT', entity_type: 'appointment', entity_id: null })
+  revalidatePath('/admin/citas')
+  redirect('/admin/citas?eliminada=1')
+}
+
+export async function deletePropertyAction(form: FormData) {
+  const context = await requireAdminContext(managerRoles)
+  const id = String(form.get('id') || '')
+  if (!z.uuid().safeParse(id).success || !hasDeleteConfirmation(form)) redirect('/admin/propiedades?error=confirmacion')
+
+  const admin = createSupabaseAdminClient()
+  const [{ data: property }, { data: images, error: imagesError }] = await Promise.all([
+    admin.from('properties').select('id,slug').eq('id', id).maybeSingle(),
+    admin.from('property_images').select('storage_path').eq('property_id', id),
+  ])
+  if (!property) redirect('/admin/propiedades?error=no_encontrado')
+  if (imagesError) redirect('/admin/propiedades?error=borrar')
+
+  const paths = (images ?? []).map((image) => image.storage_path)
+  const { error: storageError } = paths.length
+    ? await admin.storage.from('property-images').remove(paths)
+    : { error: null }
+  if (storageError) redirect('/admin/propiedades?error=archivos')
+  const { error } = await admin.from('properties').delete().eq('id', id)
+  if (error) redirect('/admin/propiedades?error=borrar')
+
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'DELETE_PROPERTY', entity_type: 'property', entity_id: property.slug })
+  revalidatePath('/'); revalidatePath('/propiedades'); revalidatePath('/propiedades/[slug]', 'page'); revalidatePath('/admin/propiedades')
+  redirect('/admin/propiedades?eliminada=1')
+}
