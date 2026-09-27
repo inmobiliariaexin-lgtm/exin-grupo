@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { getWhatsAppUrl } from '@/lib/whatsapp'
+import { WhatsAppIcon } from '@/components/whatsapp-icon'
 
 type Image = { url: string; alt: string }
 
@@ -33,9 +34,9 @@ export function PropertyGallery({ images, title, whatsapp, code }: { images: Ima
           <span className="gallery-photo-count">{currentIndex + 1} / {images.length} · Ver foto</span>
         </button>
         {images.length > 1 && <button className="gallery-carousel-step next" type="button" onClick={() => step(1)} aria-label="Fotografía siguiente">›</button>}
-        <div className="gallery-photo-footer"><span>{images[currentIndex].alt || `Fotografía ${currentIndex + 1}`}</span>{contactUrl(currentIndex) && <a href={contactUrl(currentIndex)!} target="_blank" rel="noreferrer">Consultar por WhatsApp ↗</a>}</div>
+        <div className="gallery-photo-footer"><span>{images[currentIndex].alt || `Fotografía ${currentIndex + 1}`}</span>{contactUrl(currentIndex) && <a className="whatsapp-icon-link gallery-whatsapp" href={contactUrl(currentIndex)!} target="_blank" rel="noreferrer" aria-label="Consultar esta fotografía por WhatsApp" title="WhatsApp"><WhatsAppIcon /></a>}</div>
       </div> : <p className="empty-admin">Este inmueble aún no tiene fotografías publicadas.</p>}
     </section>
-    {image && <div className="gallery-lightbox" role="dialog" aria-modal="true" aria-label={`Fotografía ${active! + 1} de ${images.length}`} onClick={(event) => { if (event.target === event.currentTarget) setActive(null) }}><button className="gallery-close" type="button" onClick={() => setActive(null)} aria-label="Cerrar galería">×</button><button className="gallery-step previous" type="button" onClick={() => setActive((active! - 1 + images.length) % images.length)} aria-label="Fotografía anterior">‹</button><figure><img src={image.url} alt={image.alt || `${title}, fotografía ${active! + 1}`} /><figcaption><span>{active! + 1} de {images.length} · {image.alt || title}</span>{contactUrl(active!) && <a href={contactUrl(active!)!} target="_blank" rel="noreferrer">Consultar esta fotografía por WhatsApp ↗</a>}</figcaption></figure><button className="gallery-step next" type="button" onClick={() => setActive((active! + 1) % images.length)} aria-label="Fotografía siguiente">›</button></div>}
+    {image && <div className="gallery-lightbox" role="dialog" aria-modal="true" aria-label={`Fotografía ${active! + 1} de ${images.length}`} onClick={(event) => { if (event.target === event.currentTarget) setActive(null) }}><button className="gallery-close" type="button" onClick={() => setActive(null)} aria-label="Cerrar galería">×</button><button className="gallery-step previous" type="button" onClick={() => setActive((active! - 1 + images.length) % images.length)} aria-label="Fotografía anterior">‹</button><figure><img src={image.url} alt={image.alt || `${title}, fotografía ${active! + 1}`} /><figcaption><span>{active! + 1} de {images.length} · {image.alt || title}</span>{contactUrl(active!) && <a className="whatsapp-icon-link gallery-whatsapp" href={contactUrl(active!)!} target="_blank" rel="noreferrer" aria-label="Consultar esta fotografía por WhatsApp" title="WhatsApp"><WhatsAppIcon /></a>}</figcaption></figure><button className="gallery-step next" type="button" onClick={() => setActive((active! + 1) % images.length)} aria-label="Fotografía siguiente">›</button></div>}
   </>
 }
