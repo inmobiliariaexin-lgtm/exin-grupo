@@ -3,6 +3,16 @@ import { createSupabasePublicClient } from '@/lib/supabase/public'
 import type { HomeContent, Property, PublicSiteSettings } from '@/lib/types'
 import { defaultHomeContent, defaultPublicSiteSettings } from '@/lib/types'
 import { defaultTermsContent, readLegalContent, type LegalPageContent } from '@/lib/legal-content'
+import { defaultCreditContent, readCreditContent, type CreditContent } from '@/lib/credit-content'
+
+export async function getCreditContent(fallbackTitle?: string): Promise<CreditContent> {
+  if (!hasSupabasePublicEnv()) return readCreditContent(defaultCreditContent, fallbackTitle)
+  try {
+    const supabase = createSupabasePublicClient()
+    const { data } = await supabase.from('site_modules').select('content').eq('module_key', 'credit').maybeSingle()
+    return readCreditContent(data?.content, fallbackTitle)
+  } catch { return readCreditContent(defaultCreditContent, fallbackTitle) }
+}
 
 export async function getTermsContent(): Promise<LegalPageContent> {
   if (!hasSupabasePublicEnv()) return defaultTermsContent

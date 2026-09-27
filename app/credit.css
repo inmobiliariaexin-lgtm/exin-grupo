@@ -1,0 +1,2 @@
+.credit-page{row-gap:24px}.credit-page .page-copy{padding-top:18px}.credit-page .page-copy h1{max-width:560px}.credit-page .page-copy .info-box{margin-top:16px}.credit-page .request-card{align-self:start}.credit-page .credit-bank-section{grid-column:1/-1}
+@media(max-width:740px){.credit-page{row-gap:13px}.credit-page .credit-bank-section{grid-column:auto}.credit-page .page-copy{padding:5px 0}}

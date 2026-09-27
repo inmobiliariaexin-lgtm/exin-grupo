@@ -10,6 +10,7 @@ export function AdminShell({ children, name, role }: { children: ReactNode; name
     { href: '/admin/leads', label: 'Leads y crédito', roles: ['superadmin', 'admin', 'commercial', 'advisor'] },
     { href: '/admin/citas', label: 'Citas', roles: ['superadmin', 'admin', 'commercial', 'advisor'] },
     { href: '/admin/contenido', label: 'Contenido', roles: ['superadmin', 'admin', 'editor'] },
+    { href: '/admin/credito', label: 'Crédito hipotecario', roles: ['superadmin', 'admin', 'editor'] },
     { href: '/admin/legal', label: 'Términos legales', roles: ['superadmin', 'admin'] },
     { href: '/admin/ubicaciones', label: 'Ubicaciones y tipos', roles: ['superadmin', 'admin'] },
     { href: '/admin/usuarios', label: 'Usuarios', roles: ['superadmin'] },

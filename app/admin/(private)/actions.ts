@@ -166,6 +166,43 @@ export async function saveHomeContentAction(form: FormData) {
   revalidatePath('/'); redirect('/admin/contenido?guardado=1')
 }
 
+export async function saveCreditContentAction(form: FormData) {
+  const context = await requireAdminContext(['superadmin','admin','editor'])
+  const contentFields = z.object({
+    title: z.string().trim().min(4).max(160),
+    introduction: z.string().trim().min(4).max(600),
+    disclaimer: z.string().trim().min(10).max(1000),
+  }).safeParse({ title: form.get('title'), introduction: form.get('introduction'), disclaimer: form.get('disclaimer') })
+  if (!contentFields.success) redirect('/admin/credito?error=campos')
+
+  let rawBanks: unknown
+  try { rawBanks = JSON.parse(String(form.get('banks') || '[]')) } catch { redirect('/admin/credito?error=bancos') }
+  const bankSchema = z.array(z.object({
+    id: z.string().trim().min(1).max(80),
+    name: z.string().trim().max(100),
+    description: z.string().trim().max(300),
+    logoUrl: z.string().trim().max(500),
+    websiteUrl: z.string().trim().max(500).refine((value) => !value || (z.url().safeParse(value).success && value.startsWith('https://'))),
+    buttonLabel: z.string().trim().max(60),
+    active: z.boolean(),
+  })).max(20)
+  const banksResult = bankSchema.safeParse(rawBanks)
+  if (!banksResult.success) redirect('/admin/credito?error=bancos')
+  const banks = banksResult.data.filter((bank) => bank.name.length > 0)
+  if (banks.some((bank) => bank.active && bank.name.length < 2) || new Set(banks.map((bank) => bank.id)).size !== banks.length) redirect('/admin/credito?error=bancos')
+
+  const storagePrefix = process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL.replace(/\/$/, '')}/storage/v1/object/public/site-media/` : ''
+  const validImageUrl = (value: string) => !value || (value.startsWith('/assets/') && !value.startsWith('//') && !value.includes('..')) || (Boolean(storagePrefix) && value.startsWith(storagePrefix) && z.url().safeParse(value).success)
+  if (banks.some((bank) => !validImageUrl(bank.logoUrl))) redirect('/admin/credito?error=imagen')
+
+  const now = new Date().toISOString()
+  const creditContent = { ...contentFields.data, banks }
+  const { error } = await context.supabase.from('site_modules').upsert({ module_key: 'credit', content: creditContent, updated_by: context.profile.id, updated_at: now })
+  if (error) redirect('/admin/credito?error=guardar')
+  await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'EDIT', entity_type: 'site_module', entity_id: 'credit' })
+  revalidatePath('/credito'); revalidatePath('/admin/credito'); redirect('/admin/credito?guardado=1')
+}
+
 export async function saveTermsContentAction(form: FormData) {
   const context = await requireAdminContext(managerRoles)
   const parsed = z.object({ title: z.string().trim().min(4).max(160), body: z.string().trim().min(100).max(20_000) }).safeParse({ title: form.get('title'), body: form.get('body') })
@@ -183,7 +220,12 @@ export async function setSiteModuleAction(form: FormData) {
   const context = await requireAdminContext(['superadmin','admin','editor'])
   const key = String(form.get('module_key') || ''), enabled = form.get('enabled') === 'on'
   if (!['featured_properties','credit','seller','allies','constructor','rent','project_cta'].includes(key)) redirect('/admin/contenido?error=modulo')
-  const { error } = await context.supabase.from('site_modules').upsert({ module_key: key, content: {}, enabled, updated_by: context.profile.id })
+  const { data: existing, error: lookupError } = await context.supabase.from('site_modules').select('module_key').eq('module_key', key).maybeSingle()
+  if (lookupError) redirect('/admin/contenido?error=guardar')
+  const update = existing
+    ? await context.supabase.from('site_modules').update({ enabled, updated_by: context.profile.id, updated_at: new Date().toISOString() }).eq('module_key', key)
+    : await context.supabase.from('site_modules').insert({ module_key: key, content: {}, enabled, updated_by: context.profile.id })
+  const { error } = update
   if (error) redirect('/admin/contenido?error=guardar')
   revalidatePath('/', 'layout')
   if (key === 'credit') revalidatePath('/credito')
@@ -206,6 +248,30 @@ export async function saveNotificationEmailAction(form: FormData) {
   }
   await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'EDIT', entity_type: 'private_setting', entity_id: 'inquiry_notification_email' })
   redirect('/admin/configuracion?guardado=1')
+}
+
+export async function sendTestNotificationEmailAction() {
+  const context = await requireAdminContext(managerRoles)
+  const { data: setting, error: settingError } = await context.supabase.from('private_settings').select('value').eq('setting_key', 'inquiry_notification_email').maybeSingle()
+  if (settingError) redirect('/admin/configuracion?prueba=fallo')
+  const recipient = setting?.value || process.env.INQUIRY_NOTIFICATION_EMAIL || ''
+  if (!recipient) redirect('/admin/configuracion?prueba=sin-destino')
+  const apiKey = getResendApiKey()
+  if (!apiKey) redirect('/admin/configuracion?prueba=sin-clave')
+  const sender = process.env.EMAIL_FROM?.trim()
+  if (!sender) redirect('/admin/configuracion?prueba=sin-remitente')
+  let sendState: 'aceptado' | 'rechazado' | 'fallo' = 'fallo'
+  try {
+    const resend = new Resend(apiKey)
+    const result = await resend.emails.send({
+      from: sender,
+      to: recipient,
+      subject: 'Prueba de correo · EXIN Grupo',
+      text: 'Este es un mensaje de prueba de las notificaciones del sitio EXIN Grupo. Si lo recibiste, Resend aceptó el envío al correo configurado.',
+    })
+    sendState = result.error ? 'rechazado' : 'aceptado'
+  } catch { sendState = 'fallo' }
+  redirect(`/admin/configuracion?prueba=${sendState}`)
 }
 
 export async function savePublicContactSettingsAction(form: FormData) {

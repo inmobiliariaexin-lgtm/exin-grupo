@@ -1,11 +1,11 @@
 import { requireAdminContext } from '@/lib/admin-auth'
-import { saveNotificationEmailAction, savePublicContactSettingsAction } from '../actions'
+import { saveNotificationEmailAction, savePublicContactSettingsAction, sendTestNotificationEmailAction } from '../actions'
 import { getPublicSiteSettings } from '@/lib/site-data'
 import { getResendApiKey } from '@/lib/resend'
 
 const configured = (name: string) => Boolean(process.env[name]?.trim())
 
-export default async function ConfigurationPage({ searchParams }: { searchParams: Promise<{ error?: string; guardado?: string; contactos?: string }> }) {
+export default async function ConfigurationPage({ searchParams }: { searchParams: Promise<{ error?: string; guardado?: string; contactos?: string; prueba?: string }> }) {
   const [{ supabase }, query] = await Promise.all([requireAdminContext(['superadmin', 'admin']), searchParams])
   const [{ data }, contacts] = await Promise.all([
     supabase.from('private_settings').select('value').eq('setting_key', 'inquiry_notification_email').maybeSingle(),
@@ -29,6 +29,7 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
     </div>
     {query.error && <p className="form-alert">{query.error === 'correo' ? 'Ingresa un correo válido.' : query.error === 'enlace' ? 'Los enlaces sociales deben empezar con https://.' : query.error === 'contacto' ? 'Revisa los teléfonos, correos y enlaces ingresados.' : 'No se pudo guardar la configuración.'}</p>}
     {(query.guardado || query.contactos) && <p className="form-success">Configuración guardada.</p>}
+    {query.prueba && <p className={query.prueba === 'aceptado' ? 'form-success' : 'form-alert'} role={query.prueba === 'aceptado' ? 'status' : 'alert'}>{query.prueba === 'aceptado' ? 'Resend aceptó el correo de prueba. Revisa la bandeja de entrada y correo no deseado del destinatario.' : query.prueba === 'sin-destino' ? 'Falta guardar un correo receptor en esta sección o configurar INQUIRY_NOTIFICATION_EMAIL en Cloudflare.' : query.prueba === 'sin-clave' ? 'No está disponible la clave de Resend en este entorno del hosting.' : query.prueba === 'sin-remitente' ? 'Falta configurar EMAIL_FROM en Cloudflare.' : query.prueba === 'rechazado' ? 'Resend rechazó el envío. Revisa la verificación del dominio/remitente y la actividad de la cuenta en Resend.' : 'No se pudo completar el envío de prueba. Revisa la configuración y la actividad en Resend.'}</p>}
 
     <section className="admin-panel">
       <div className="panel-title"><h2>Contacto público</h2></div>
@@ -52,7 +53,13 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
         <label className="wide">Correo de notificaciones<input type="email" name="email" defaultValue={email} maxLength={254} placeholder="inmobiliaria.exin@gmail.com" /><small>Si se deja vacío, el sistema usa INQUIRY_NOTIFICATION_EMAIL del hosting.</small></label>
         <button className="button">Guardar correo</button>
       </form>
+      <form action={sendTestNotificationEmailAction} className="test-email-form"><button type="submit" className="small-button">Enviar correo de prueba</button><span>Se enviará al destinatario configurado arriba.</span></form>
       <p className="form-hint">El envío requiere la clave de Resend y EMAIL_FROM configurados como secretos y variables de Cloudflare Workers, y un remitente habilitado en Resend. El navegador nunca recibe esas credenciales.</p>
+    </section>
+
+    <section className="admin-panel">
+      <div className="panel-title"><h2>Recuperación e invitaciones del panel</h2></div>
+      <p className="form-hint">Estos correos salen por Supabase Auth y su servidor SMTP; son independientes de Resend. El botón de prueba anterior comprueba únicamente las notificaciones de formularios. Si falla una recuperación o invitación, revisa en Supabase: Authentication → SMTP Settings y Authentication → URL Configuration.</p>
     </section>
 
     <section className="admin-panel">
