@@ -29,12 +29,16 @@ body{background:var(--color-background)}
 .property-card{overflow:hidden;border-radius:20px;border:1px solid #e5e8ea;box-shadow:0 10px 28px #18212b0a;transition:transform .2s ease,box-shadow .2s ease}
 .property-card:hover{transform:translateY(-4px);box-shadow:0 18px 38px #18212b16}
 .property-card .card-image{position:relative;border-radius:0}
-.property-card .card-body{padding:18px}
-.property-card h3{width:fit-content;max-width:100%;margin:0 0 11px;padding:9px 12px;border-radius:10px;background:#f3ae00;color:#142438;line-height:1.3}
-.property-card h3 a{display:block;color:inherit}
-.property-card .location{color:#687889}
-.property-card .details{color:#967137}
-.property-card .card-bottom{align-items:center}
+.property-card .card-body{display:block;padding:18px;background:#f3ae00;color:#142438;text-decoration:none;cursor:pointer;transition:filter .2s ease}
+.property-card .card-body:hover{filter:brightness(1.04)}
+.property-card .card-body:focus-visible{outline:3px solid #15283d;outline-offset:-4px}
+.property-card h3{width:fit-content;max-width:100%;margin:0 0 11px;padding:0;background:transparent;color:#142438;line-height:1.3}
+.property-card .property-type{color:#553d0b}
+.property-card .location{color:#28384b}
+.property-card .location small{color:#33465d}
+.property-card .specs{border-top-color:#15283d55;color:#142438}
+.property-card .price{color:#142438}
+.property-card .card-bottom{justify-content:flex-start;align-items:center}
 .detail-page{max-width:1200px}
 .detail-heading h1,.page-copy h1,.narrow-page h1,.listing-page>h1{font-family:Georgia,'Times New Roman',serif;font-weight:600;letter-spacing:-.8px}
 .detail-heading h1{font-size:38px;color:#132840}
