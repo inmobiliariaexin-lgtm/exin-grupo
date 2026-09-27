@@ -7,7 +7,5 @@ const networks = [
 ] as const
 
 export function SocialLinks({ contacts }: { contacts: PublicSiteSettings }) {
-  const links = networks.filter(({ key }) => contacts[key])
-  if (!links.length) return null
-  return <div className="social-follow"><span>Síguenos</span><nav className="social-links" aria-label="Redes sociales">{links.map(({ key, label, path }) => <a key={key} href={contacts[key]} target="_blank" rel="noopener noreferrer" aria-label={`EXIN Grupo en ${label}`} title={label}><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">{path}</svg></a>)}</nav></div>
+  return <div className="social-follow"><span>Síguenos</span><nav className="social-links" aria-label="Redes sociales">{networks.map(({ key, label, path }) => contacts[key] ? <a key={key} href={contacts[key]} target="_blank" rel="noopener noreferrer" aria-label={`EXIN Grupo en ${label}`} title={label}><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">{path}</svg></a> : <span className="social-icon-disabled" key={key} aria-label={`${label}: enlace pendiente de configurar`} title={`${label}: configura el enlace desde Administración`}><svg aria-hidden="true" viewBox="0 0 24 24" focusable="false">{path}</svg></span>)}</nav></div>
 }
