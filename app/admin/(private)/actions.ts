@@ -182,7 +182,7 @@ export async function saveTermsContentAction(form: FormData) {
 export async function setSiteModuleAction(form: FormData) {
   const context = await requireAdminContext(['superadmin','admin','editor'])
   const key = String(form.get('module_key') || ''), enabled = form.get('enabled') === 'on'
-  if (!['featured_properties','credit','seller','allies','constructor','rent'].includes(key)) redirect('/admin/contenido?error=modulo')
+  if (!['featured_properties','credit','seller','allies','constructor','rent','project_cta'].includes(key)) redirect('/admin/contenido?error=modulo')
   const { error } = await context.supabase.from('site_modules').upsert({ module_key: key, content: {}, enabled, updated_by: context.profile.id })
   if (error) redirect('/admin/contenido?error=guardar')
   revalidatePath('/', 'layout')

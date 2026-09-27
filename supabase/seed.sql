@@ -14,7 +14,8 @@ values
   ('seller', '{}'::jsonb, true, 30),
   ('allies', '{}'::jsonb, true, 40),
   ('constructor', '{}'::jsonb, false, 50),
-  ('rent', '{}'::jsonb, false, 60)
+  ('rent', '{}'::jsonb, false, 60),
+  ('project_cta', '{}'::jsonb, false, 70)
 on conflict (module_key) do nothing;
 
 insert into public.property_types (name, sort_order)
