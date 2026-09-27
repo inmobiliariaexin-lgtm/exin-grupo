@@ -216,18 +216,22 @@ export async function savePublicContactSettingsAction(form: FormData) {
     whatsapp: z.string().trim().max(32).regex(/^[0-9+().\s-]*$/),
     instagram: z.string().trim().max(250),
     facebook: z.string().trim().max(250),
+    youtube: z.string().trim().max(250),
+    tiktok: z.string().trim().max(250),
+    linkedin: z.string().trim().max(250),
   })
-  const parsed = schema.safeParse(Object.fromEntries(['phone','email','whatsapp','instagram','facebook'].map((key) => [key, form.get(key) ?? ''])))
+  const socialKeys = ['instagram','facebook','youtube','tiktok','linkedin'] as const
+  const parsed = schema.safeParse(Object.fromEntries(['phone','email','whatsapp',...socialKeys].map((key) => [key, form.get(key) ?? ''])))
   if (!parsed.success) redirect('/admin/configuracion?error=contacto')
-  for (const key of ['instagram','facebook'] as const) {
+  for (const key of socialKeys) {
     const value = parsed.data[key]
-    if (value && !value.startsWith('https://')) redirect('/admin/configuracion?error=enlace')
+    if (value && (!z.url().safeParse(value).success || !value.startsWith('https://'))) redirect('/admin/configuracion?error=enlace')
   }
   for (const [key, value] of Object.entries(parsed.data)) {
     const { error } = await context.supabase.from('site_settings').upsert({ setting_key: key, value, is_public: true, updated_by: context.profile.id, updated_at: new Date().toISOString() })
     if (error) redirect('/admin/configuracion?error=guardar')
   }
-  revalidatePath('/'); revalidatePath('/contacto'); redirect('/admin/configuracion?contactos=1')
+  revalidatePath('/', 'layout'); redirect('/admin/configuracion?contactos=1')
 }
 
 export async function createLocationAction(form: FormData) {

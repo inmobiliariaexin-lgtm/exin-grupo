@@ -29,8 +29,8 @@ export type HomeContent = {
   modules?: Record<string, boolean>
 }
 
-export type PublicSiteSettings = { phone: string; email: string; whatsapp: string; instagram: string; facebook: string }
-export const defaultPublicSiteSettings: PublicSiteSettings = { phone: '', email: '', whatsapp: '', instagram: '', facebook: '' }
+export type PublicSiteSettings = { phone: string; email: string; whatsapp: string; instagram: string; facebook: string; youtube: string; tiktok: string; linkedin: string }
+export const defaultPublicSiteSettings: PublicSiteSettings = { phone: '', email: '', whatsapp: '', instagram: '', facebook: '', youtube: '', tiktok: '', linkedin: '' }
 
 export const defaultHomeContent: HomeContent = {
   hero_title: 'Encuentra tu próximo inmueble',

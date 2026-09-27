@@ -93,4 +93,6 @@ Configura en `.env.local` para desarrollo. Para producción, administra las vari
 
 El contenido del catálogo aún requiere inmuebles reales publicados. Desde **Administración → Configuración** se deben completar los teléfonos y WhatsApp. Los textos de privacidad, consentimiento y términos necesitan aprobación de EXIN y revisión jurídica. Conviene enviar una solicitud de prueba con datos ficticios y confirmar que queda guardada en **Administración → Solicitudes** y que llega a `inmobiliaria.exin@gmail.com` antes de promocionar la captación.
 
+Los comandos `npm run preview:cloudflare` y `npm run deploy:cloudflare-preview` cargan las variables `NEXT_PUBLIC_*` declaradas en `wrangler.jsonc` durante la compilación. Esto es necesario porque Next.js incorpora estas llaves públicas al JavaScript del navegador en el momento de compilar.
+
 Documentación oficial: [Cloudflare Workers](https://developers.cloudflare.com/workers/), [OpenNext](https://opennext.js.org/cloudflare), [Supabase](https://supabase.com/docs), [Resend](https://resend.com/docs) y [Cloudflare Turnstile](https://developers.cloudflare.com/turnstile/).

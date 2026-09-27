@@ -27,7 +27,7 @@ export async function getPublicSiteSettings(): Promise<PublicSiteSettings> {
   if (!hasSupabasePublicEnv()) return defaultPublicSiteSettings
   try {
     const supabase = createSupabasePublicClient()
-    const { data } = await supabase.from('site_settings').select('setting_key,value').eq('is_public', true).in('setting_key', ['phone','email','whatsapp','instagram','facebook'])
+    const { data } = await supabase.from('site_settings').select('setting_key,value').eq('is_public', true).in('setting_key', ['phone','email','whatsapp','instagram','facebook','youtube','tiktok','linkedin'])
     return { ...defaultPublicSiteSettings, ...Object.fromEntries((data ?? []).map((row) => [row.setting_key, String(row.value ?? '')])) }
   } catch { return defaultPublicSiteSettings }
 }
@@ -55,6 +55,20 @@ export async function getPublicProperties(featuredOnly = false, rentalsEnabled?:
     const urls = new Map((images ?? []).map((image) => [image.property_id, supabase.storage.from('property-images').getPublicUrl(image.storage_path).data.publicUrl]))
     return data.map((item) => ({ ...item, cover_url: urls.get(item.id) ?? null })) as Property[]
   } catch { return [] }
+}
+
+export async function getSimilarProperties(property: Property, limit = 4): Promise<Property[]> {
+  const candidates = (await getPublicProperties(false)).filter((candidate) => candidate.id !== property.id)
+  const score = (candidate: Property) => {
+    let value = 0
+    if (candidate.operation === property.operation) value += 4
+    if (candidate.property_type.toLocaleLowerCase() === property.property_type.toLocaleLowerCase()) value += 3
+    if (property.city && candidate.city?.toLocaleLowerCase() === property.city.toLocaleLowerCase()) value += 3
+    if (property.neighborhood && candidate.neighborhood?.toLocaleLowerCase() === property.neighborhood.toLocaleLowerCase()) value += 2
+    return value
+  }
+  return candidates.map((candidate) => ({ candidate, score: score(candidate) })).filter(({ score }) => score >= 4)
+    .sort((a, b) => b.score - a.score).slice(0, limit).map(({ candidate }) => candidate)
 }
 
 export async function searchPublishedProperties(filters: { query?:string; city?:string; type?:string; operation?:'sale'|'rent'; bedrooms?:number; bathrooms?:number; minArea?:number; maxArea?:number; sort?:string; page?:number }, rentalsEnabled:boolean) {

@@ -18,14 +18,15 @@ function clientAddress(request: NextRequest) {
 
 async function verifyTurnstile(token: string | undefined, remoteIp: string, expectedHostname: string) {
   const secret = process.env.TURNSTILE_SECRET_KEY
-  if (!secret && process.env.NODE_ENV !== 'production') return true
-  if (!secret || !token) return false
+  if (!secret && process.env.NODE_ENV !== 'production') return { ok: true, unavailable: false }
+  if (!secret) return { ok: false, unavailable: true }
+  if (!token) return { ok: false, unavailable: false }
   const body = new URLSearchParams({ secret, response: token, remoteip: remoteIp })
   try {
     const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', { method: 'POST', body, cache: 'no-store', signal: AbortSignal.timeout(5000) })
     const result = await response.json() as { success?: boolean; hostname?: string }
-    return result.success === true && result.hostname === expectedHostname
-  } catch { return false }
+    return { ok: result.success === true && result.hostname === expectedHostname, unavailable: false }
+  } catch { return { ok: false, unavailable: true } }
 }
 
 export async function POST(request: NextRequest) {
@@ -55,8 +56,9 @@ export async function POST(request: NextRequest) {
   if (!process.env.LEGAL_CONSENT_VERSION) return NextResponse.json({ error: 'El formulario aún no está habilitado. El aviso legal está pendiente de aprobación.' }, { status: 503 })
   if (!process.env.RATE_LIMIT_HMAC_SECRET || process.env.RATE_LIMIT_HMAC_SECRET.length < 32) return NextResponse.json({ error: 'El formulario aún no está habilitado. Falta completar la configuración de seguridad.' }, { status: 503 })
   const remoteIp = clientAddress(request)
-  const validCaptcha = await verifyTurnstile(data.turnstileToken, remoteIp, originUrl.hostname)
-  if (!validCaptcha) return NextResponse.json({ error: 'Verifica que eres una persona e inténtalo otra vez.' }, { status: 400 })
+  const captcha = await verifyTurnstile(data.turnstileToken, remoteIp, originUrl.hostname)
+  if (captcha.unavailable) return NextResponse.json({ error: 'La verificación está temporalmente fuera de servicio. Escríbenos por WhatsApp o teléfono.' }, { status: 503 })
+  if (!captcha.ok) return NextResponse.json({ error: 'Completa la verificación de seguridad e inténtalo otra vez. Si el problema continúa, escríbenos por WhatsApp.' }, { status: 400 })
 
   const admin = createSupabaseAdminClient()
   const ipDigest = createHmac('sha256', process.env.RATE_LIMIT_HMAC_SECRET).update(remoteIp).digest('hex')
@@ -104,11 +106,30 @@ export async function POST(request: NextRequest) {
   if (recipient && resendApiKey && process.env.EMAIL_FROM) {
     try {
       const resend = new Resend(resendApiKey)
+      const flowDetails = data.kind === 'credit'
+        ? [`Interés en crédito: ${data.interest}`]
+        : data.kind === 'capture'
+          ? [`Tipo de inmueble que ofrece: ${data.propertyType}`, `Ciudad: ${data.city}`, data.neighborhood ? `Barrio o zona: ${data.neighborhood}` : null]
+          : data.kind === 'appointment'
+            ? [`Tipo de cita: ${data.appointmentType}`, `Fecha preferida: ${data.appointmentDate}`, `Hora preferida: ${data.appointmentTime}`]
+            : []
+      const details = [
+        'Nueva solicitud recibida en el sitio de EXIN Grupo.',
+        `Tipo: ${data.kind}`,
+        `Referencia: ${inquiryId}`,
+        `Nombre: ${data.fullName}`,
+        `Teléfono: ${data.phone}`,
+        `Correo: ${data.email}`,
+        `Inmueble: ${data.propertyCode || 'No indicado'}`,
+        data.message ? `Mensaje: ${data.message}` : null,
+        ...flowDetails,
+        'Consulta y gestiona esta solicitud desde el panel administrativo.',
+      ].filter(Boolean).join('\n')
       const result = await resend.emails.send({
         from: process.env.EMAIL_FROM,
         to: recipient,
         subject: `Nueva solicitud ${data.kind} · EXIN Grupo`,
-        text: [`Nueva solicitud recibida en el sitio de EXIN Grupo.`, `Tipo: ${data.kind}`, `Referencia interna: ${inquiryId}`, `Inmueble: ${data.propertyCode || 'No indicado'}`, `Consulta el detalle desde el panel privado.`].join('\n'),
+        text: details,
       })
       notificationSent = !result.error
     } catch { notificationSent = false }

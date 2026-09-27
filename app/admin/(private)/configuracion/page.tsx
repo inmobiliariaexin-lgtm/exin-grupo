@@ -27,7 +27,7 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
         <p>Los secretos de integraciones se guardan en el hosting, no en esta página.</p>
       </div>
     </div>
-    {query.error && <p className="form-alert">{query.error === 'correo' ? 'Ingresa un correo válido.' : 'No se pudo guardar la configuración.'}</p>}
+    {query.error && <p className="form-alert">{query.error === 'correo' ? 'Ingresa un correo válido.' : query.error === 'enlace' ? 'Los enlaces sociales deben empezar con https://.' : query.error === 'contacto' ? 'Revisa los teléfonos, correos y enlaces ingresados.' : 'No se pudo guardar la configuración.'}</p>}
     {(query.guardado || query.contactos) && <p className="form-success">Configuración guardada.</p>}
 
     <section className="admin-panel">
@@ -38,6 +38,10 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
         <label>WhatsApp con indicativo<input name="whatsapp" defaultValue={contacts.whatsapp} placeholder="573001234567" maxLength={32} /></label>
         <label>Instagram URL<input name="instagram" type="url" defaultValue={contacts.instagram} maxLength={250} /></label>
         <label>Facebook URL<input name="facebook" type="url" defaultValue={contacts.facebook} maxLength={250} /></label>
+        <label>YouTube URL<input name="youtube" type="url" defaultValue={contacts.youtube} maxLength={250} /></label>
+        <label>TikTok URL<input name="tiktok" type="url" defaultValue={contacts.tiktok} maxLength={250} /></label>
+        <label>LinkedIn URL<input name="linkedin" type="url" defaultValue={contacts.linkedin} maxLength={250} /></label>
+        <p className="form-hint wide">Añade las direcciones de tus redes. Solo aparecerán en el pie de página las que tengan un enlace guardado.</p>
         <button className="button">Guardar contacto</button>
       </form>
     </section>
