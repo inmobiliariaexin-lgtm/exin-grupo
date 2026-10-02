@@ -32,7 +32,6 @@ type CatalogFilters = {
   city?: string
   type?: string
   operation?: 'sale' | 'rent'
-  source?: 'exin' | 'habi'
   bedrooms?: number
   bathrooms?: number
   minArea?: number
@@ -124,7 +123,6 @@ function mapHabiRow(row: HabiRow): CatalogEntry | null {
 function matches(entry: CatalogEntry, filters: CatalogFilters, rentalsEnabled: boolean) {
   const property = entry.property
   if (!rentalsEnabled && property.operation === 'rent') return false
-  if (filters.source && property.source !== filters.source) return false
   if (filters.city && property.city !== filters.city) return false
   if (filters.type && property.property_type !== filters.type) return false
   if (filters.operation && property.operation !== filters.operation) return false

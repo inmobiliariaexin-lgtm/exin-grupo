@@ -15,7 +15,6 @@ type Search = {
   city?: string
   type?: string
   operation?: 'sale' | 'rent'
-  source?: 'exin' | 'habi'
   sort?: string
   bedrooms?: string
   bathrooms?: string
@@ -31,13 +30,11 @@ function asNumber(value?: string) {
 export default async function PropertiesPage({ searchParams }: { searchParams: Promise<Search> }) {
   const params = await searchParams
   const rentEnabled = await getRentEnabled()
-  const source = params.source === 'exin' || params.source === 'habi' ? params.source : undefined
   const result = await getUnifiedCatalogPage({
     query: params.q,
     city: params.city,
     type: params.type,
     operation: params.operation === 'sale' || params.operation === 'rent' ? params.operation : undefined,
-    source,
     sort: params.sort,
     bedrooms: asNumber(params.bedrooms),
     bathrooms: asNumber(params.bathrooms),
@@ -50,7 +47,7 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
   const pageCount = Math.max(1, Math.ceil(total / pageSize))
   const pageParams = new URLSearchParams()
   for (const [key, value] of Object.entries(params)) {
-    if (key !== 'page' && value) pageParams.set(key, value)
+    if (key !== 'page' && key !== 'source' && value) pageParams.set(key, value)
   }
   const previousParams = new URLSearchParams(pageParams)
   const nextParams = new URLSearchParams(pageParams)
@@ -75,7 +72,6 @@ export default async function PropertiesPage({ searchParams }: { searchParams: P
         <p className="filter-menu-heading">Filtrar propiedades</p>
         <div className="listing-filter-grid">
           <label>Buscar por nombre, zona o código<input name="q" defaultValue={params.q} /></label>
-          <label>Origen<select name="source" defaultValue={source ?? ''}><option value="">EXIN y Habi</option><option value="exin">EXIN Grupo</option><option value="habi">Aliado Habi</option></select></label>
           <label>Ciudad<select name="city" defaultValue={params.city ?? ''}><option value="">Todas</option>{cities.map((city) => <option key={city}>{city}</option>)}</select></label>
           <label>Tipo<select name="type" defaultValue={params.type ?? ''}><option value="">Todos</option>{propertyTypes.map((item) => <option key={item}>{item}</option>)}</select></label>
           <label>Operación<select name="operation" defaultValue={params.operation ?? ''}><option value="">Todas</option><option value="sale">Venta</option>{rentEnabled && <option value="rent">Arriendo</option>}</select></label>

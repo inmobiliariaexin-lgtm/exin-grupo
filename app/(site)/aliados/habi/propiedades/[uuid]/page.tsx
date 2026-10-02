@@ -26,7 +26,7 @@ export default async function HabiPropertyPage({ params }: { params: Promise<Par
   const gallery = property.gallery.length ? property.gallery : property.cover_url ? [{ url: property.cover_url, alt: property.title }] : []
 
   return <main className="section detail-page">
-    <Link className="back-link" href="/propiedades?source=habi">← Volver al catálogo de propiedades</Link>
+    <Link className="back-link" href="/propiedades">← Volver al catálogo de propiedades</Link>
     <PropertyGallery images={gallery} title={property.title} whatsapp={contacts.whatsapp} code={property.verification_code} />
     <div className="detail-heading"><div><p className="eyebrow dark">INMUEBLE DE NUESTRO ALIADO HABI · CÓDIGO {property.verification_code}</p><h1>{property.title}</h1><p className="location">⌖ &nbsp;{[property.neighborhood, property.city].filter(Boolean).join(' · ') || 'Ubicación por confirmar'}</p></div><strong className="detail-price">{formatPropertyPrice(property.price)}</strong></div>
     <div className="detail-specs">{property.bedrooms !== null && <span>{property.bedrooms} habitaciones</span>}{property.bathrooms !== null && <span>{property.bathrooms} baños</span>}{property.garages != null && <span>{property.garages} garajes</span>}{property.area_m2 !== null && <span>{property.area_m2} m²</span>}<span>{property.property_type}</span></div>
