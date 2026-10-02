@@ -1,4 +1,4 @@
-import { syncHabiCatalogAction } from '@/app/admin/(private)/actions'
+import { HabiSyncControl } from './sync-control'
 import { requireAdminContext } from '@/lib/admin-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -8,7 +8,7 @@ const errorMessages: Record<string, string> = {
   'not-configured': 'Falta configurar la llave privada HABI_API_KEY en los secretos del Worker de Cloudflare.',
   unauthorized: 'Habi rechazó la llave o no tiene permiso para consultar el catálogo. Revisa la llave con Habi.',
   'invalid-request': 'Habi rechazó los parámetros de consulta.',
-  unavailable: 'No se pudo completar la conexión con Habi. Intenta de nuevo más tarde.',
+  unavailable: 'El intento anterior se interrumpió antes de publicar el catálogo. El avance quedó guardado y se puede continuar desde aquí.',
   'invalid-response': 'La respuesta de Habi llegó incompleta o con un formato distinto al esperado. El catálogo anterior se conserva.',
   'page-limit': 'La consulta superó el límite preventivo de páginas. El catálogo anterior se conserva; revisa la paginación de Habi.',
   'database-error': 'No se pudo guardar toda la actualización. Los registros anteriores se conservan; revisa la configuración de Supabase.',
@@ -54,9 +54,13 @@ export default async function AdminHabiCatalogPage({ searchParams }: { searchPar
       {latestRun?.status === 'failed' && latestRun.error_code && <p className="form-alert" role="status">{errorMessages[latestRun.error_code] ?? 'El último intento de sincronización no se completó.'}</p>}
       {!schemaReady && <p className="form-alert" role="alert">Aún falta aplicar a Supabase la migración que crea el almacenamiento del catálogo Habi.</p>}
       {!apiKeyConfigured && <p className="form-hint">Para habilitar el botón, configura <code>HABI_API_KEY</code> como secreto del Worker de Cloudflare. No escribas la llave en el código ni en GitHub.</p>}
-      <form action={syncHabiCatalogAction}>
-        <button className="button" type="submit" disabled={!apiKeyConfigured || !schemaReady}>Traer y guardar catálogo completo</button>
-      </form>
+      <HabiSyncControl
+        apiKeyConfigured={apiKeyConfigured}
+        schemaReady={schemaReady}
+        resumableRunId={latestRun?.status === 'running' ? latestRun.id : null}
+        resumableReceived={latestRun?.status === 'running' ? latestRun.properties_received : 0}
+        resumablePages={latestRun?.status === 'running' ? latestRun.pages_received : 0}
+      />
     </section>
 
     <section className="admin-panel">
