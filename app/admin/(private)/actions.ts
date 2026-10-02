@@ -155,7 +155,54 @@ export async function updateAppointmentAction(form: FormData) {
 
 export async function saveHomeContentAction(form: FormData) {
   const context = await requireAdminContext(['superadmin','admin','editor'])
-  const parsed = z.object({ hero_title: z.string().trim().min(4).max(160), hero_subtitle: z.string().trim().min(4).max(400), hero_image: z.string().trim().min(1).max(500), credit_title: z.string().trim().min(4).max(160), seller_title: z.string().trim().min(4).max(160) }).safeParse(Object.fromEntries(['hero_title','hero_subtitle','hero_image','credit_title','seller_title'].map((key) => [key, form.get(key)])))
+  const fields = {
+    hero_eyebrow: z.string().trim().min(2).max(80),
+    hero_title: z.string().trim().min(4).max(160),
+    hero_subtitle: z.string().trim().min(4).max(400),
+    hero_image: z.string().trim().min(1).max(500),
+    promise_one: z.string().trim().min(2).max(80),
+    promise_two: z.string().trim().min(2).max(80),
+    promise_three: z.string().trim().min(2).max(80),
+    featured_eyebrow: z.string().trim().min(2).max(100),
+    featured_title: z.string().trim().min(2).max(100),
+    featured_subtitle: z.string().trim().min(2).max(240),
+    featured_button: z.string().trim().min(2).max(50),
+    project_eyebrow: z.string().trim().min(2).max(100),
+    project_title: z.string().trim().min(2).max(100),
+    project_emphasis: z.string().trim().min(2).max(100),
+    project_body: z.string().trim().min(2).max(300),
+    project_button: z.string().trim().min(2).max(50),
+    credit_eyebrow: z.string().trim().min(2).max(100),
+    credit_title: z.string().trim().min(4).max(160),
+    credit_body: z.string().trim().min(2).max(300),
+    credit_button: z.string().trim().min(2).max(50),
+    seller_eyebrow: z.string().trim().min(2).max(100),
+    seller_title: z.string().trim().min(4).max(160),
+    seller_body: z.string().trim().min(2).max(300),
+    seller_link: z.string().trim().min(2).max(60),
+    allies_heading: z.string().trim().min(2).max(100),
+    allies_body: z.string().trim().min(2).max(300),
+    allies_link: z.string().trim().min(2).max(60),
+    allies_eyebrow: z.string().trim().min(2).max(100),
+    allies_page_title: z.string().trim().min(2).max(160),
+    allies_page_intro: z.string().trim().min(2).max(1000),
+    allies_page_detail: z.string().trim().min(2).max(1000),
+    about_eyebrow: z.string().trim().min(2).max(100),
+    about_title: z.string().trim().min(2).max(160),
+    about_intro: z.string().trim().min(2).max(1000),
+    about_details: z.string().trim().min(2).max(2000),
+    about_button: z.string().trim().min(2).max(60),
+    sell_eyebrow: z.string().trim().min(2).max(100),
+    sell_page_title: z.string().trim().min(2).max(160),
+    sell_intro: z.string().trim().min(2).max(1000),
+    sell_benefits: z.string().trim().min(2).max(600),
+    sell_note: z.string().trim().min(2).max(1000),
+    contact_eyebrow: z.string().trim().min(2).max(100),
+    contact_title: z.string().trim().min(2).max(160),
+    contact_intro: z.string().trim().min(2).max(1000),
+    footer_tagline: z.string().trim().min(2).max(100),
+  }
+  const parsed = z.object(fields).safeParse(Object.fromEntries(Object.keys(fields).map((key) => [key, form.get(key)])))
   if (!parsed.success) redirect('/admin/contenido?error=campos')
   const image = parsed.data.hero_image
   const storagePrefix = process.env.NEXT_PUBLIC_SUPABASE_URL ? `${process.env.NEXT_PUBLIC_SUPABASE_URL}/storage/v1/object/public/site-media/` : ''
@@ -163,7 +210,7 @@ export async function saveHomeContentAction(form: FormData) {
   const { error } = await context.supabase.from('site_modules').upsert({ module_key: 'home', content: parsed.data, enabled: true, updated_by: context.profile.id, updated_at: new Date().toISOString() })
   if (error) redirect('/admin/contenido?error=guardar')
   await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: 'EDIT', entity_type: 'site_module', entity_id: 'home' })
-  revalidatePath('/'); redirect('/admin/contenido?guardado=1')
+  revalidatePath('/', 'layout'); revalidatePath('/vender'); revalidatePath('/nosotros'); revalidatePath('/contacto'); revalidatePath('/aliados'); redirect('/admin/contenido?guardado=1')
 }
 
 export async function saveCreditContentAction(form: FormData) {

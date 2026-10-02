@@ -31,7 +31,7 @@ export default async function ConfigurationPage({ searchParams }: { searchParams
     {(query.guardado || query.contactos) && <p className="form-success">Configuración guardada.</p>}
     {query.prueba && <p className={query.prueba === 'aceptado' ? 'form-success' : 'form-alert'} role={query.prueba === 'aceptado' ? 'status' : 'alert'}>{query.prueba === 'aceptado' ? 'Resend aceptó el correo de prueba. Revisa la bandeja de entrada y correo no deseado del destinatario.' : query.prueba === 'sin-destino' ? 'Falta guardar un correo receptor en esta sección o configurar INQUIRY_NOTIFICATION_EMAIL en Cloudflare.' : query.prueba === 'sin-clave' ? 'No está disponible la clave de Resend en este entorno del hosting.' : query.prueba === 'sin-remitente' ? 'Falta configurar EMAIL_FROM en Cloudflare.' : query.prueba === 'rechazado' ? 'Resend rechazó el envío. Revisa la verificación del dominio/remitente y la actividad de la cuenta en Resend.' : 'No se pudo completar el envío de prueba. Revisa la configuración y la actividad en Resend.'}</p>}
 
-    <section className="admin-panel">
+    <section className="admin-panel" id="contacto">
       <div className="panel-title"><h2>Contacto público</h2></div>
       <form action={savePublicContactSettingsAction} className="admin-form-grid">
         <label>Teléfono<input name="phone" defaultValue={contacts.phone} maxLength={32} /></label>
