@@ -1,7 +1,8 @@
 import Link from 'next/link'
 import { PropertyCard } from '@/components/property-card'
 import { PropertySearch } from '@/components/property-search'
-import { getActiveCities, getActivePropertyTypes, getHomeContent, getPublicProperties, getRentEnabled } from '@/lib/site-data'
+import { getHomeContent, getRentEnabled } from '@/lib/site-data'
+import { getUnifiedCatalogPage } from '@/lib/unified-catalog'
 import type { AppRole } from '@/lib/types'
 
 const edits = {
@@ -20,10 +21,9 @@ function EditHotspot({ href, children = 'Editar esta sección' }: { href: string
 }
 
 export async function HomePageContent({ editRole }: { editRole?: AppRole }) {
-  const [content, cities, propertyTypes, rentEnabled] = await Promise.all([
-    getHomeContent(), getActiveCities(), getActivePropertyTypes(), getRentEnabled(),
-  ])
-  const properties = await getPublicProperties(true, rentEnabled)
+  const [content, rentEnabled] = await Promise.all([getHomeContent(), getRentEnabled()])
+  const catalog = await getUnifiedCatalogPage({}, rentEnabled, { pageSize: 5, homeFeatured: true })
+  const { properties, cities, propertyTypes } = catalog
   const canEditContent = !!editRole && ['superadmin', 'admin', 'editor'].includes(editRole)
   const canManageProperties = !!editRole && ['superadmin', 'admin'].includes(editRole)
   const canManageCatalog = !!editRole && ['superadmin', 'admin'].includes(editRole)
@@ -49,7 +49,7 @@ export async function HomePageContent({ editRole }: { editRole?: AppRole }) {
     {content.modules?.featured_properties !== false && <section className="section properties" id="propiedades">
       {canManageProperties && <EditHotspot href={edits.propiedades}>Gestionar propiedades</EditHotspot>}
       <div className="section-heading"><div className="featured-heading-copy"><p className="eyebrow dark">{content.featured_eyebrow}</p><h2>{content.featured_title}</h2><p>{content.featured_subtitle}</p><Link className="featured-properties-button" href="/propiedades">{content.featured_button} <span aria-hidden="true">→</span></Link></div></div>
-      {properties.length ? <div className="cards">{properties.map((property) => <PropertyCard property={property} key={property.id} editHref={canManageProperties ? `/admin/propiedades/${property.id}/editar` : undefined} imagesHref={canManageProperties ? `/admin/propiedades/${property.id}/imagenes` : undefined} />)}</div> : <div className="empty-properties"><span>⌂</span><h3>Estamos preparando el catálogo</h3><p>Las propiedades aparecerán aquí cuando EXIN Grupo las publique.</p><Link className="text-link" href="/contacto">Pregúntanos por opciones <b>→</b></Link></div>}
+      {properties.length ? <div className="cards">{properties.map((property) => <PropertyCard property={property} key={property.id} editHref={canManageProperties && property.source === 'exin' ? `/admin/propiedades/${property.id}/editar` : undefined} imagesHref={canManageProperties && property.source === 'exin' ? `/admin/propiedades/${property.id}/imagenes` : undefined} />)}</div> : <div className="empty-properties"><span>⌂</span><h3>Estamos preparando el catálogo</h3><p>Las propiedades aparecerán aquí cuando se publiquen o sincronicen.</p><Link className="text-link" href="/contacto">Pregúntanos por opciones <b>→</b></Link></div>}
     </section>}
 
     {content.modules?.project_cta === true && <section className="mid-cta" id="proyecto">

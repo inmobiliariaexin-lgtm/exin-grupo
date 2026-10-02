@@ -1,4 +1,5 @@
 import { HabiSyncControl } from './sync-control'
+import Link from 'next/link'
 import { requireAdminContext } from '@/lib/admin-auth'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
@@ -37,6 +38,7 @@ export default async function AdminHabiCatalogPage({ searchParams }: { searchPar
         <p className="eyebrow dark">INTEGRACIÓN COMERCIAL</p>
         <h1>Catálogo de Habi</h1>
         <p>Guarda el catálogo completo de Habi en Supabase y publica desde una copia local que puedes consultar aunque el API no responda.</p>
+        <p><Link className="text-link" href="/propiedades" target="_blank">Ver catálogo público unificado →</Link></p>
       </div>
     </div>
 
@@ -66,6 +68,7 @@ export default async function AdminHabiCatalogPage({ searchParams }: { searchPar
     <section className="admin-panel">
       <div className="panel-title"><h2>Qué se guarda</h2></div>
       <p>Se conserva la respuesta original completa de cada inmueble en formato JSON, junto con sus campos normalizados, imágenes y fecha de publicación. También se guarda el resultado de paginación que devuelve cada consulta y el historial de cada sincronización.</p>
+      <p>Los campos de Habi se conservan separados de los campos de EXIN para respetar su fuente, pero ambos inventarios se presentan juntos en <Link className="text-link" href="/propiedades">el catálogo público</Link>. Las fichas de EXIN y sus fotografías se administran en Propiedades; el inventario Habi se actualiza desde esta sección.</p>
       <p>Si una actualización falla o llega incompleta, los datos anteriores permanecen disponibles. Los inmuebles que Habi ya no devuelve se dejan inactivos al terminar una sincronización completa; sus datos no se borran.</p>
       <p className="form-hint">La dirección y la respuesta original permanecen privadas en la base de datos. El sitio entrega a los visitantes solo los datos necesarios para mostrar la ficha.</p>
     </section>

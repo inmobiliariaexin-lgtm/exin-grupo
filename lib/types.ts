@@ -12,6 +12,7 @@ export type Property = {
   description: string | null
   bedrooms: number | null
   bathrooms: number | null
+  garages?: number | null
   area_m2: number | null
   seo_title?: string | null
   seo_description?: string | null
@@ -84,7 +85,7 @@ export const defaultHomeContent: HomeContent = {
   promise_three: 'Opciones\npara ti',
   featured_eyebrow: 'OPCIONES PARA TU SIGUIENTE CAPÍTULO',
   featured_title: 'Propiedades destacadas',
-  featured_subtitle: 'Explora los inmuebles publicados por EXIN Grupo.',
+  featured_subtitle: 'Explora inmuebles publicados por EXIN Grupo y nuestro aliado Habi.',
   featured_button: 'Ver propiedades',
   project_eyebrow: '¿TIENES UN PROYECTO EN MENTE?',
   project_title: 'Hagámoslo realidad,',

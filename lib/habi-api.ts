@@ -96,6 +96,7 @@ export function normalizeHabiProperty(row: HabiRawProperty): HabiProperty | null
     description: text(row.description),
     bedrooms: finiteNumber(row.room_count),
     bathrooms: finiteNumber(row.bathroom_count),
+    garages: finiteNumber(row.garage_count),
     area_m2: finiteNumber(row.area),
     status: 'published',
     is_featured: false,

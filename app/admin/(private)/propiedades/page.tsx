@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { requireAdminContext } from '@/lib/admin-auth'
 import { AdminDeleteForm } from '@/components/admin-delete-form'
 import { getActiveCities, getActivePropertyTypes } from '@/lib/site-data'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { deletePropertyAction, setPropertyStatusAction, createPropertyAction } from '../actions'
 
 export default async function AdminPropertiesPage({ searchParams }: { searchParams: Promise<{ error?: string; guardada?: string; actualizada?: string; eliminada?: string; archivos_pendientes?: string }> }) {
@@ -11,10 +12,13 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
     getActivePropertyTypes(),
     searchParams,
   ])
+  const admin = createSupabaseAdminClient()
 
-  const [{ data: properties }, { data: typesAll }] = await Promise.all([
+  const [{ data: properties }, { data: typesAll }, { count: publishedCount }, { count: habiCount }] = await Promise.all([
     supabase.from('properties').select('id,verification_code,slug,title,status,operation,price,is_featured,created_at').order('created_at', { ascending: false }).limit(100),
     supabase.from('property_types').select('name').eq('active', true).order('sort_order'),
+    supabase.from('properties').select('id', { count: 'exact', head: true }).eq('status', 'published'),
+    admin.from('habi_properties').select('storage_key', { count: 'exact', head: true }).eq('active', true).not('external_uuid', 'is', null),
   ])
 
   const propertyIds = (properties ?? []).map((property) => property.id)
@@ -44,18 +48,27 @@ export default async function AdminPropertiesPage({ searchParams }: { searchPara
   return <>
     <div className="admin-page-heading">
       <div>
-        <p className="eyebrow dark">CATÁLOGO</p>
-        <h1>Propiedades</h1>
-        <p>Registra los inmuebles y administra desde aquí sus fotografías y publicación.</p>
+        <p className="eyebrow dark">CATÁLOGO UNIFICADO</p>
+        <h1>Propiedades de EXIN</h1>
+        <p>Administra los inmuebles propios. El catálogo público también reúne las propiedades sincronizadas de Habi.</p>
       </div>
-      <Link href="/admin/contenido" className="small-button">Biblioteca multimedia</Link>
+      <div className="inline-admin-form"><Link href="/admin/contenido" className="small-button">Biblioteca multimedia</Link><Link href="/admin/aliados/habi" className="small-button">Administrar catálogo Habi</Link></div>
     </div>
     {query.error && <p className="form-alert" role="alert">{errors[query.error] || 'Ocurrió un error.'}</p>}
     {query.guardada && <p className="form-success">Inmueble registrado. Ahora puedes cargar sus fotografías en la lista de abajo.</p>}
     {query.actualizada && <p className="form-success">Estado actualizado.</p>}
     {query.eliminada && <p className="form-success">Inmueble, ficha y fotografías eliminados. Las solicitudes de clientes se conservaron.</p>}
 
-    <section className="admin-panel">
+    <section className="admin-panel" aria-labelledby="catalog-source-heading">
+      <div className="panel-title"><h2 id="catalog-source-heading">Fuentes del catálogo público</h2><Link className="small-button" href="/propiedades" target="_blank">Ver catálogo ↗</Link></div>
+      <div className="admin-metrics">
+        <article><span>Propiedades de EXIN publicadas</span><strong>{publishedCount ?? 0}</strong><Link className="text-link" href="#exin-properties">Crear o editar inmuebles →</Link></article>
+        <article><span>Propiedades activas de Habi</span><strong>{habiCount ?? 0}</strong><Link className="text-link" href="/admin/aliados/habi">Revisar sincronización →</Link></article>
+      </div>
+      <p className="form-hint">La información de EXIN se guarda en sus fichas y biblioteca de fotos. La información recibida de Habi queda organizada en su catálogo sincronizado, conservando los campos y la respuesta original. El sitio presenta ambos orígenes en una sola búsqueda.</p>
+    </section>
+
+    <section className="admin-panel" id="exin-properties">
       <div className="panel-title"><h2>Registrar inmueble</h2></div>
       <p className="form-hint">Guarda primero la ficha. Después aparecerá el botón <strong>Cargar fotos</strong> en la lista de inmuebles recientes.</p>
       <form action={createPropertyAction} className="admin-form-grid">
