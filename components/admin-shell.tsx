@@ -25,6 +25,7 @@ export async function AdminShell({ children, name, role }: { children: ReactNode
     { href: '/admin/contenido#aliados', label: 'Aliados y módulos', roles: editorRoles },
     { href: '/admin/contenido#multimedia', label: 'Biblioteca multimedia', roles: editorRoles },
     { href: '/admin/ubicaciones', label: 'Ciudades y tipos de inmueble', roles: ['superadmin', 'admin'] },
+    { href: '/admin/aliados/habi', label: 'Catálogo de Habi', roles: ['superadmin', 'admin'] },
     { href: '/admin/leads', label: 'Solicitudes y datos de clientes', roles: operationalRoles },
     { href: '/admin/citas', label: 'Citas', roles: operationalRoles },
     { href: '/admin/legal', label: 'Términos y condiciones', roles: ['superadmin', 'admin'] },

@@ -68,9 +68,21 @@ Configura en `.env.local` para desarrollo. Para producción, administra las vari
 - `NEXT_PUBLIC_SITE_URL` (URL canónica HTTPS de producción)
 - `LEGAL_CONSENT_VERSION` (versión del aviso aprobada por EXIN)
 - `EXIN_RESEND_API_KEY` (or `RESEND_API_KEY`), `EMAIL_FROM`, `INQUIRY_NOTIFICATION_EMAIL`
+- `HABI_API_KEY` (server-only; store as a Cloudflare Worker secret and never commit its value)
 - `NEXT_PUBLIC_TURNSTILE_SITE_KEY`, `TURNSTILE_SECRET_KEY`
 
-`SUPABASE_SECRET_KEY`, `RATE_LIMIT_HMAC_SECRET`, `EXIN_RESEND_API_KEY` y `TURNSTILE_SECRET_KEY` son secretos: nunca deben añadirse a GitHub ni a `wrangler.jsonc`. Las variables `NEXT_PUBLIC_*` se necesitan al compilar el cliente. Añade el hostname de producción y el de vista previa a Turnstile.
+`SUPABASE_SECRET_KEY`, `RATE_LIMIT_HMAC_SECRET`, `EXIN_RESEND_API_KEY`, `HABI_API_KEY` y `TURNSTILE_SECRET_KEY` son secretos: nunca deben añadirse a GitHub ni a `wrangler.jsonc`. Las variables `NEXT_PUBLIC_*` se necesitan al compilar el cliente. Añade el hostname de producción y el de vista previa a Turnstile.
+
+## Guardar y sincronizar el catálogo de Habi
+
+La integración conserva todos los campos de cada inmueble que devuelve el API dentro de `habi_properties.raw_data`, incluidos campos futuros que el sitio todavía no muestre. También guarda los datos normalizados para la página, las imágenes y los metadatos de paginación por consulta en el historial de sincronización. Una sincronización se prepara primero en tablas privadas y solo reemplaza el catálogo público cuando se completan todas las páginas; los datos guardados no se borran cuando una publicación deja de llegar desde Habi.
+
+1. La migración `20261001000100_store_habi_catalog.sql` ya está aplicada en el proyecto Supabase `exin-grupo`. Para instalar en otro proyecto, aplica primero las migraciones anteriores y luego esta migración.
+2. En el Worker de Cloudflare, guarda la credencial como secreto `HABI_API_KEY`. Si una llave se comparte en una captura o chat, rótala cuando sea posible y no la guardes en el repositorio.
+3. Entra al administrador y abre **Administración → Catálogo de Habi** (`/admin/aliados/habi`).
+4. Pulsa **Traer y guardar catálogo completo**. La página pública de Habi mostrará los registros guardados en Supabase y la ficha original del inmueble quedará disponible aunque el API esté temporalmente fuera de servicio.
+
+La llave se usa únicamente en el servidor. La respuesta JSON original, la dirección y el historial no se exponen a visitantes del sitio.
 
 ## Desplegar en Cloudflare Workers
 
@@ -85,7 +97,8 @@ Configura en `.env.local` para desarrollo. Para producción, administra las vari
 ## Rutas implementadas
 
 - Sitio público: `/`, `/propiedades`, `/propiedades/[slug]`, `/vender`, `/credito`, `/nosotros`, `/contacto`, `/aliados`, `/agendar` y `/privacidad`.
-- Administración protegida: `/admin/login`, `/admin`, `/admin/propiedades`, `/admin/propiedades/[id]/editar`, `/admin/propiedades/[id]/imagenes`, `/admin/leads`, `/admin/citas`, `/admin/contenido`, `/admin/ubicaciones`, `/admin/usuarios` y `/admin/configuracion`.
+- Catálogo de Habi: `/aliados/habi/propiedades` y `/aliados/habi/propiedades/[uuid]`.
+- Administración protegida: `/admin/login`, `/admin`, `/admin/propiedades`, `/admin/propiedades/[id]/editar`, `/admin/propiedades/[id]/imagenes`, `/admin/aliados/habi`, `/admin/leads`, `/admin/citas`, `/admin/contenido`, `/admin/ubicaciones`, `/admin/usuarios` y `/admin/configuracion`.
 - El módulo de arriendos y el de constructora empiezan desactivados. No hay listados inmobiliarios ficticios en el catálogo conectado.
 - `prototipo-estatico/` conserva la maqueta anterior para referencia visual; no es el sitio de producción ni debe publicarse como reemplazo de la aplicación Next.js.
 

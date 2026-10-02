@@ -18,6 +18,8 @@ export type Property = {
   status: 'draft' | 'published' | 'inactive' | 'sold'
   is_featured: boolean
   cover_url?: string | null
+  source?: 'exin' | 'habi'
+  source_offset?: number
 }
 
 export type HomeContent = {

@@ -6,6 +6,7 @@ import { Resend } from 'resend'
 import { requireAdminContext } from '@/lib/admin-auth'
 import { getResendApiKey } from '@/lib/resend'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { syncHabiCatalog } from '@/lib/habi-sync'
 import type { AppRole } from '@/lib/types'
 
 const managerRoles: AppRole[] = ['superadmin', 'admin']
@@ -32,6 +33,24 @@ export async function createPropertyAction(form: FormData) {
   if (error) redirect(`/admin/propiedades?error=${error.code === '23505' ? 'duplicado' : 'guardar'}`)
   await context.supabase.from('audit_log').insert({ actor_id: context.profile.id, action: value.status === 'published' ? 'PUBLISH' : 'CREATE', entity_type: 'property', entity_id: slug })
   revalidatePath('/'); revalidatePath('/propiedades'); redirect('/admin/propiedades?guardada=1')
+}
+
+export async function syncHabiCatalogAction() {
+  const context = await requireAdminContext(managerRoles)
+  const result = await syncHabiCatalog(context.profile.id)
+  await context.supabase.from('audit_log').insert({
+    actor_id: context.profile.id,
+    action: result.ok ? 'SYNC_HABI_CATALOG' : 'SYNC_HABI_CATALOG_FAILED',
+    entity_type: 'habi_catalog',
+    entity_id: result.runId,
+    details: { received: result.received, saved: result.saved, pages: result.pages, error: result.ok ? null : result.error },
+  })
+
+  revalidatePath('/admin/aliados/habi')
+  revalidatePath('/aliados/habi/propiedades')
+  revalidatePath('/aliados/habi/propiedades/[uuid]', 'page')
+  if (result.ok) redirect(`/admin/aliados/habi?sync=ok&saved=${result.saved}&received=${result.received}`)
+  redirect(`/admin/aliados/habi?error=${result.error}`)
 }
 
 export async function updatePropertyAction(form: FormData) {
